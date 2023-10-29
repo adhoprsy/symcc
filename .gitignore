@@ -44,3 +44,8 @@ compile_commands.json
 
 # Build directories
 build*
+
+.vscode/*
+qsym/*
+simple/*
+more-tests/*

@@ -92,4 +92,13 @@ void loadConfig() {
       throw std::runtime_error(msg.str());
     }
   }
+
+  // directed mode
+  auto *directedMode = getenv("SYMCC_DIRECTED_SOLVE");
+  auto *directedTarget = getenv("SYMCC_TARGET");
+  if (directedMode != nullptr && directedTarget != nullptr) {
+    g_config.directedMode = true;
+    g_config.directedTarget = directedTarget;
+  }
+    
 }
