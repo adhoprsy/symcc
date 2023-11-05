@@ -18,6 +18,8 @@
 
 #include <string>
 #include <variant>
+#include <unordered_set>
+#include <filesystem>
 
 /// Marker struct for fully concrete execution.
 struct NoInput {};
@@ -68,7 +70,8 @@ struct Config {
   size_t garbageCollectionThreshold = 5'000'000;
 
   bool directedMode = false;
-  std::string directedTarget = "";
+  std::string directedTargetFile = "";
+  std::unordered_set<std::string> directedTargetLine;
 };
 
 /// The global configuration object.

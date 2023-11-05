@@ -41,6 +41,8 @@ Runtime::Runtime(Module &M) {
   auto *int8T = IRB.getInt8Ty();
   auto *int1T = IRB.getInt1Ty();
   auto *voidT = IRB.getVoidTy();
+  //@SJJ
+  auto *int64T = IRB.getInt64Ty();
 
   buildInteger = import(M, "_sym_build_integer", ptrT, IRB.getInt64Ty(), int8T);
   buildInteger128 = import(M, "_sym_build_integer128", ptrT, IRB.getInt64Ty(),
@@ -72,8 +74,12 @@ Runtime::Runtime(Module &M) {
   buildConcat =
       import(M, "_sym_concat_helper", ptrT, ptrT,
              ptrT); // doesn't follow naming convention for historic reasons
+//   pushPathConstraint =
+//       import(M, "_sym_push_path_constraint", voidT, ptrT, int1T, intPtrType);
+// @SJJ
   pushPathConstraint =
-      import(M, "_sym_push_path_constraint", voidT, ptrT, int1T, intPtrType);
+      import(M, "_sym_push_path_constraint", voidT, ptrT, int1T, intPtrType, 
+      /*@SJJ pos_hash*/ int64T);
 
   // Overflow arithmetic
   buildAddOverflow =

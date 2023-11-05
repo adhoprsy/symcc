@@ -94,11 +94,19 @@ void loadConfig() {
   }
 
   // directed mode
-  auto *directedMode = getenv("SYMCC_DIRECTED_SOLVE");
-  auto *directedTarget = getenv("SYMCC_TARGET");
-  if (directedMode != nullptr && directedTarget != nullptr) {
+  auto *directedMode = getenv("SYMCC_DIRECTED");
+  auto *directedTargetFile = getenv("SYMCC_NEGATE_TARGET_FILE");
+  auto *directedTargetLine = getenv("SYMCC_NEGATE_TARGET_LINE");
+  if (directedMode != nullptr && directedTargetFile != nullptr && directedTargetLine != nullptr) {
     g_config.directedMode = true;
-    g_config.directedTarget = directedTarget;
+    g_config.directedTargetFile = directedTargetFile;
+    // parse line number from string like 1,2,3,4,5
+    std::string line_str = directedTargetLine;
+    std::stringstream ss(line_str);
+    std::string token;
+    while (std::getline(ss, token, ',')) {
+      g_config.directedTargetLine.insert(token);
+    }
   }
     
 }

@@ -486,3 +486,17 @@ SymExpr _sym_build_bit_to_bool(SymExpr expr) {
   return _sym_build_not_equal(expr,
                               _sym_build_integer(0, _sym_bits_helper(expr)));
 }
+
+//@SJJ
+uint64_t _hash_target_pos(const std::string& str1, const std::string& str2) {
+  
+  uint64_t hash1 = 0, hash2 = 0;
+
+  for (const auto& c : str1)
+    hash1 = (hash1 * 255 + c) % 998244353; 
+
+  for (const auto& c : str2)
+    hash2 = (hash2 * 131 + c) % 1000000007; 
+
+  return (hash1 << 32) ^ hash2;
+}

@@ -21,9 +21,37 @@
 #include <llvm/IR/Intrinsics.h>
 #include <llvm/Transforms/Utils/BasicBlockUtils.h>
 
+//@SJJ
+#include <filesystem>
+#include <llvm/Support/Debug.h>
+#include <iostream>
+
 #include "Runtime.h"
 
 using namespace llvm;
+
+//@SJJ
+uint64_t _get_hash_target_pos(Instruction &I) {
+  DILocation *loc = I.getDebugLoc();
+  auto line = loc -> getLine();
+  //auto column = loc -> getColumn();
+  namespace fs = std::filesystem;
+  fs::path filepath = (loc->getFilename()).str();
+  fs::path abspath = fs::canonical(fs::absolute(filepath));
+
+  std::cerr << abspath.string() << "\n";
+  std::cerr << line << "\n";
+
+  uint64_t hash1 = 0, hash2 = 0;
+
+  for (const auto& c : abspath.string())
+    hash1 = (hash1 * 255 + c) % 998244353; 
+
+  for (const auto& c : std::to_string(line))
+    hash2 = (hash2 * 131 + c) % 1000000007; 
+
+  return (hash1 << 32) ^ hash2;
+}
 
 void Symbolizer::symbolizeFunctionArguments(Function &F) {
   // The main function doesn't receive symbolic arguments.
@@ -437,10 +465,20 @@ void Symbolizer::visitSelectInst(SelectInst &I) {
   // expression over from the chosen argument.
 
   IRBuilder<> IRB(&I);
+  // auto runtimeCall = buildRuntimeCall(IRB, runtime.pushPathConstraint,
+  //                                     {{I.getCondition(), true},
+  //                                      {I.getCondition(), false},
+  //                                      {getTargetPreferredInt(&I), false}});
+
+  // @SJJ
+  auto position_hash =_get_hash_target_pos(I);
+
   auto runtimeCall = buildRuntimeCall(IRB, runtime.pushPathConstraint,
                                       {{I.getCondition(), true},
                                        {I.getCondition(), false},
-                                       {getTargetPreferredInt(&I), false}});
+                                       {getTargetPreferredInt(&I), false},
+                                       {llvm::ConstantInt::get(IRB.getInt64Ty(), position_hash), false}});
+
   registerSymbolicComputation(runtimeCall);
   if (getSymbolicExpression(I.getTrueValue()) ||
       getSymbolicExpression(I.getFalseValue())) {
@@ -487,10 +525,21 @@ void Symbolizer::visitBranchInst(BranchInst &I) {
     return;
 
   IRBuilder<> IRB(&I);
+  // auto runtimeCall = buildRuntimeCall(IRB, runtime.pushPathConstraint,
+  //                                     {{I.getCondition(), true},
+  //                                      {I.getCondition(), false},
+  //                                      {getTargetPreferredInt(&I), false}});
+
+  //@SJJ add a pos hash argument  
+  auto position_hash = _get_hash_target_pos(I);
+  std::cerr << "\033[36m" <<"position_hash: " << position_hash << "\n" << "\033[0m";
+
   auto runtimeCall = buildRuntimeCall(IRB, runtime.pushPathConstraint,
                                       {{I.getCondition(), true},
                                        {I.getCondition(), false},
-                                       {getTargetPreferredInt(&I), false}});
+                                       {getTargetPreferredInt(&I), false},
+                                       {llvm::ConstantInt::get(IRB.getInt64Ty(), position_hash), false}});
+
   registerSymbolicComputation(runtimeCall);
 }
 
@@ -906,6 +955,9 @@ void Symbolizer::visitSwitchInst(SwitchInst &I) {
   auto *conditionExpr = getSymbolicExpression(condition);
   if (conditionExpr == nullptr)
     return;
+  
+  // @SJJ
+  auto position_hash = _get_hash_target_pos(I);
 
   // Build a check whether we have a symbolic condition, to be used later.
   auto *haveSymbolicCondition = IRB.CreateICmpNE(
@@ -920,8 +972,13 @@ void Symbolizer::visitSwitchInst(SwitchInst &I) {
     auto *caseConstraint = IRB.CreateCall(
         runtime.comparisonHandlers[CmpInst::ICMP_EQ],
         {conditionExpr, createValueExpression(caseHandle.getCaseValue(), IRB)});
+    // IRB.CreateCall(runtime.pushPathConstraint,
+    //                {caseConstraint, caseTaken, getTargetPreferredInt(&I)});
+
+    // @SJJ               
     IRB.CreateCall(runtime.pushPathConstraint,
-                   {caseConstraint, caseTaken, getTargetPreferredInt(&I)});
+                   {caseConstraint, caseTaken, getTargetPreferredInt(&I), 
+                    llvm::ConstantInt::get(IRB.getInt64Ty(), position_hash)});
   }
 }
 
@@ -1091,6 +1148,7 @@ void Symbolizer::tryAlternative(IRBuilder<> &IRB, Value *V) {
     auto *destAssertion =
         IRB.CreateCall(runtime.comparisonHandlers[CmpInst::ICMP_EQ],
                        {destExpr, concreteDestExpr});
+    // @SJJ TODO: here?
     auto *pushAssertion = IRB.CreateCall(
         runtime.pushPathConstraint,
         {destAssertion, IRB.getInt1(true), getTargetPreferredInt(V)});

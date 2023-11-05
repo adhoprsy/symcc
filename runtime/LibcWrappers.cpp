@@ -515,6 +515,12 @@ const char *SYM(strchr)(const char *s, int c) {
   auto shadow = ReadOnlyShadow(s, length);
   auto shadowIt = shadow.begin();
   for (size_t i = 0; i < length; i++) {
+    // _sym_push_path_constraint(
+    //     _sym_build_not_equal(
+    //         (*shadowIt != nullptr) ? *shadowIt : _sym_build_integer(s[i], 8),
+    //         cExpr),
+    //     /*taken*/ 1, reinterpret_cast<uintptr_t>(SYM(strchr)));
+    // @SJJ
     _sym_push_path_constraint(
         _sym_build_not_equal(
             (*shadowIt != nullptr) ? *shadowIt : _sym_build_integer(s[i], 8),

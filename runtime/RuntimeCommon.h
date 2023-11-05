@@ -42,6 +42,11 @@ extern "C" {
 #endif
 
 /*
+ * @SJJ Target Position Hash
+ */
+uint64_t _hash_target_pos(const std::string&, const std::string&);
+
+/*
  * Initialization
  */
 void _sym_initialize(void);
@@ -177,8 +182,12 @@ SymExpr _sym_get_return_expression(void);
 /*
  * Constraint handling
  */
-void _sym_push_path_constraint(nullable SymExpr constraint, int taken,
-                               uintptr_t site_id);
+// void _sym_push_path_constraint(nullable SymExpr constraint, int taken,
+//                                uintptr_t site_id);
+// @SJJ
+void _sym_push_path_constraint(nullable SymExpr constraint, int taken, uintptr_t site_id, 
+                                uint64_t pos_hash = 0);
+
 SymExpr _sym_get_input_byte(size_t offset, uint8_t concrete_value);
 void _sym_make_symbolic(const void *data, size_t byte_length,
                         size_t input_offset);

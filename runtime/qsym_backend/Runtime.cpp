@@ -73,6 +73,9 @@ Solver *g_solver;
 CallStackManager g_call_stack_manager;
 z3::context *g_z3_context;
 
+//@SJJ
+std::unordered_set<uint64_t> g_target_hash;
+
 } // namespace qsym
 
 namespace {
@@ -174,6 +177,28 @@ void _sym_initialize(void) {
         << "Performing fully concrete execution (i.e., without symbolic input)"
         << std::endl;
     return;
+  }
+
+  // @SJJ Check the hash target
+  if (g_config.directedMode) {
+    if (!fs::exists(g_config.directedTargetFile)) {
+      std::cerr << "Error: the target file " << g_config.directedTargetFile
+                << " (configurable via SYMCC_NEGATE_TARGET_FILE) does not exist."
+                << std::endl;
+      exit(-1);
+    }
+
+    fs::path filepath = g_config.directedTargetFile;
+    fs::path abspath = fs::canonical(fs::absolute(filepath));
+    g_config.directedTargetFile = abspath.string();
+
+    // @SJJ
+    for (auto line : g_config.directedTargetLine) {
+      std::cerr << "\033[36m" << "- target:" << g_config.directedTargetFile << ' '
+                                            << line << '\n' << "\033[0m";
+      g_target_hash.insert( _hash_target_pos(g_config.directedTargetFile, 
+                                            line) );
+    }
   }
 
   // Check the output directory
@@ -311,11 +336,21 @@ SymExpr _sym_build_trunc(SymExpr expr, uint8_t bits) {
 }
 
 void _sym_push_path_constraint(SymExpr constraint, int taken,
-                               uintptr_t site_id) {
+                               uintptr_t site_id, /*@SJJ*/ uint64_t pos_hash) {
   if (constraint == nullptr)
     return;
 
-  g_solver->addJcc(allocatedExpressions.at(constraint), taken != 0, site_id);
+  // @SJJ check hash
+  if (g_config.directedMode) {
+    g_solver->addJcc(allocatedExpressions.at(constraint), taken != 0, site_id,
+                      true, (g_target_hash.find(pos_hash) != g_target_hash.end())
+                    );
+  }
+  else {
+    g_solver->addJcc(allocatedExpressions.at(constraint), taken != 0, site_id, 
+                      false, false
+                    );
+  }
 }
 
 SymExpr _sym_get_input_byte(size_t offset, uint8_t value) {
