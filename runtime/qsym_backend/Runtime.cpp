@@ -340,6 +340,8 @@ void _sym_push_path_constraint(SymExpr constraint, int taken,
   if (constraint == nullptr)
     return;
 
+  std::cerr << "\033[33m" <<  "[ DEBUG ]" << "\033[0m pos_hash: " << pos_hash << "\n";
+
   // @SJJ check hash
   if (g_config.directedMode) {
     g_solver->addJcc(allocatedExpressions.at(constraint), taken != 0, site_id,

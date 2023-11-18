@@ -11,16 +11,18 @@ class Executor :
         self.target_line = args.line
         self.out_dir = config.out_dir
         
-    def __get_symcc_env(self) :
+    def __get_symcc_cmd(self) : 
+        cmd = None
         concolic_env = {'SYMCC_ENABLE_LINEARIZATION': '1', 
                         # 'SYMCC_AFL_COVERAGE_MAP': str(self.bitmap),
                         'SYMCC_INPUT_FILE': str(self.cur_input),
+                        'SYMCC_OUTPUT_DIR' : str(self.out_dir),
                         'SYMCC_DIRECTED' : '1',  
                         'SYMCC_NEGATE_TARGET_FILE' : str(self.src),
-                        'SYMCC_NEGATE_TARGET_LINE' : str(self.target_line),
-                        'SYMCC_OUTPUT_DIR' : str(self.out_dir)
+                        'SYMCC_NEGATE_TARGET_LINE' : str(self.target_line)
                         }
-        return 
+        
+        return cmd
     def solve() -> None :
         pass
 
@@ -42,6 +44,7 @@ def main() :
     parser.add_argument('-i', dest='input', required=True, type=validPath, help='Input file path')
     args = parser.parse_args()
     config = yaml.load(args.config)
+
     config.out_dir = Path(config.out_dir).resolve()
 
     executor = Executor(args, config)

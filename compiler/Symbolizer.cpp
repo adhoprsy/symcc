@@ -21,37 +21,11 @@
 #include <llvm/IR/Intrinsics.h>
 #include <llvm/Transforms/Utils/BasicBlockUtils.h>
 
-//@SJJ
-#include <filesystem>
-#include <llvm/Support/Debug.h>
-#include <iostream>
-
 #include "Runtime.h"
 
+#include <iostream>
+
 using namespace llvm;
-
-//@SJJ
-uint64_t _get_hash_target_pos(Instruction &I) {
-  DILocation *loc = I.getDebugLoc();
-  auto line = loc -> getLine();
-  //auto column = loc -> getColumn();
-  namespace fs = std::filesystem;
-  fs::path filepath = (loc->getFilename()).str();
-  fs::path abspath = fs::canonical(fs::absolute(filepath));
-
-  std::cerr << abspath.string() << "\n";
-  std::cerr << line << "\n";
-
-  uint64_t hash1 = 0, hash2 = 0;
-
-  for (const auto& c : abspath.string())
-    hash1 = (hash1 * 255 + c) % 998244353; 
-
-  for (const auto& c : std::to_string(line))
-    hash2 = (hash2 * 131 + c) % 1000000007; 
-
-  return (hash1 << 32) ^ hash2;
-}
 
 void Symbolizer::symbolizeFunctionArguments(Function &F) {
   // The main function doesn't receive symbolic arguments.

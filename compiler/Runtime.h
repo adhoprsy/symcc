@@ -96,4 +96,6 @@ struct Runtime {
 
 bool isInterceptedFunction(const llvm::Function &f);
 
+//@SJJ
+uint64_t _get_hash_target_pos(const llvm::Instruction &I);
 #endif

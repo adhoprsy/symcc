@@ -25,6 +25,11 @@
 #include <llvm/Target/TargetOptions.h>
 #include <llvm/Transforms/Utils/ModuleUtils.h>
 
+//@SJJ
+#include "llvm/IR/DebugInfoMetadata.h"
+#include "llvm/IR/Instructions.h"
+#include "llvm/Support/Debug.h"
+
 #if LLVM_VERSION_MAJOR < 14
 #include <llvm/Support/TargetRegistry.h>
 #else
@@ -54,12 +59,41 @@ static constexpr char kSymCtorName[] = "__sym_ctor";
 bool instrumentModule(Module &M) {
   DEBUG(errs() << "Symbolizer module instrumentation\n");
 
+  //@SJJ
+  // create declaration of global var current_pos_hash in "runtime/LibcWrapper"
+  // I think its thread_local, copy from afl llvm_mode
+  IntegerType *Int32Ty = IntegerType::getInt32Ty(M.getContext());
+  GlobalVariable *GlobalCurrentPosHash =
+      new GlobalVariable(M, Int32Ty, false,
+                         GlobalValue::ExternalLinkage, 0, "__current_pos_hash",
+                         0, GlobalVariable::GeneralDynamicTLSModel, 0, false);
+  errs() << "GLOABL!!!!!!!!!!!!!!!!\n"; 
+
   // Redirect calls to external functions to the corresponding wrappers and
   // rename internal functions.
   for (auto &function : M.functions()) {
     auto name = function.getName();
     if (isInterceptedFunction(function))
       function.setName(name + "_symbolized");
+  }
+
+  for (auto &F : M) {
+    //@SJJ
+    for (auto &BB : F) {
+      for (auto &I : BB) {
+        if (auto *CI = dyn_cast<CallInst>(&I)) {
+          // for all InterceptedFunctino call, add an argument pos_hash, for directed mode
+          IRBuilder<> Builder(CI);
+          auto *calledFunction = CI->getCalledFunction();
+          if (calledFunction == nullptr || !calledFunction->getName().contains("_symbolized")) {
+            continue;
+          }
+          uint64_t pos_hash = _get_hash_target_pos(I);
+          auto *hashValue = ConstantInt::get(IntegerType::getInt32Ty(M.getContext()), pos_hash);
+          Builder.CreateStore(hashValue, GlobalCurrentPosHash);
+        }
+      }
+    }
   }
 
   // Insert a constructor that initializes the runtime and any globals.

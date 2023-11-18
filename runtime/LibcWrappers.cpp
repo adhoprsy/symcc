@@ -48,7 +48,13 @@
 #include "Shadow.h"
 #include <Runtime.h>
 
+//@SJJ
+#include "RuntimeCommon.h"
+
 #define SYM(x) x##_symbolized
+
+//@SJJ
+thread_local uint64_t __current_pos_hash = 0;
 
 namespace {
 
@@ -63,9 +69,8 @@ template <typename V, typename F>
 void tryAlternative(V value, SymExpr valueExpr, F caller) {
   if (valueExpr) {
     _sym_push_path_constraint(
-        _sym_build_equal(valueExpr,
-                         _sym_build_integer(value, sizeof(value) * 8)),
-        true, reinterpret_cast<uintptr_t>(caller));
+        _sym_build_equal(valueExpr, _sym_build_integer(value, sizeof(value) * 8)),
+        true, reinterpret_cast<uintptr_t>(caller), /*@SJJ*/__current_pos_hash);
   }
 }
 
