@@ -62,12 +62,11 @@ bool instrumentModule(Module &M) {
   //@SJJ
   // create declaration of global var current_pos_hash in "runtime/LibcWrapper"
   // I think its thread_local, copy from afl llvm_mode
-  IntegerType *Int32Ty = IntegerType::getInt32Ty(M.getContext());
+  IntegerType *Int64Ty = IntegerType::getInt64Ty(M.getContext());
   GlobalVariable *GlobalCurrentPosHash =
-      new GlobalVariable(M, Int32Ty, false,
+      new GlobalVariable(M, Int64Ty, false,
                          GlobalValue::ExternalLinkage, 0, "__current_pos_hash",
                          0, GlobalVariable::GeneralDynamicTLSModel, 0, false);
-  errs() << "GLOABL!!!!!!!!!!!!!!!!\n"; 
 
   // Redirect calls to external functions to the corresponding wrappers and
   // rename internal functions.
@@ -89,7 +88,8 @@ bool instrumentModule(Module &M) {
             continue;
           }
           uint64_t pos_hash = _get_hash_target_pos(I);
-          auto *hashValue = ConstantInt::get(IntegerType::getInt32Ty(M.getContext()), pos_hash);
+          errs() << "_symbolized pos_hash: " << pos_hash << "\n";
+          auto *hashValue = ConstantInt::get(IntegerType::getInt64Ty(M.getContext()), pos_hash);
           Builder.CreateStore(hashValue, GlobalCurrentPosHash);
         }
       }

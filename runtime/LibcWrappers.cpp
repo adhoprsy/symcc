@@ -54,7 +54,7 @@
 #define SYM(x) x##_symbolized
 
 //@SJJ
-thread_local uint64_t __current_pos_hash = 0;
+__thread uint64_t __current_pos_hash = 0;
 
 namespace {
 
@@ -67,7 +67,9 @@ uint64_t inputOffset = 0;
 /// Tell the solver to try an alternative value than the given one.
 template <typename V, typename F>
 void tryAlternative(V value, SymExpr valueExpr, F caller) {
+  std::cerr << "libc pos_hash : " << __current_pos_hash << std::endl;
   if (valueExpr) {
+    std::cerr << "ok\n";
     _sym_push_path_constraint(
         _sym_build_equal(valueExpr, _sym_build_integer(value, sizeof(value) * 8)),
         true, reinterpret_cast<uintptr_t>(caller), /*@SJJ*/__current_pos_hash);
@@ -530,12 +532,49 @@ const char *SYM(strchr)(const char *s, int c) {
         _sym_build_not_equal(
             (*shadowIt != nullptr) ? *shadowIt : _sym_build_integer(s[i], 8),
             cExpr),
-        /*taken*/ 1, reinterpret_cast<uintptr_t>(SYM(strchr)));
+        /*taken*/ 1, reinterpret_cast<uintptr_t>(SYM(strchr))
+        , /*@SJJ*/__current_pos_hash);
     ++shadowIt;
   }
 
   return result;
 }
+
+
+const char *SYM(strrchr)(const char *s, int c) {
+  tryAlternative(s, _sym_get_parameter_expression(0), SYM(strrchr));
+  tryAlternative(c, _sym_get_parameter_expression(1), SYM(strrchr));
+
+  auto *result = strrchr(s, c);
+  _sym_set_return_expression(nullptr);
+
+  auto *cExpr = _sym_get_parameter_expression(1);
+  if (isConcrete(s, result != nullptr ? (result - s) : strlen(s)) &&
+      cExpr == nullptr)
+    return result;
+
+  if (cExpr == nullptr)
+    cExpr = _sym_build_integer(c, 8);
+  else
+    cExpr = _sym_build_trunc(cExpr, 8);
+
+  size_t length = result != nullptr ? (result - s) : strlen(s);
+  auto shadow = ReadOnlyShadow(s, length);
+  auto shadowIt = shadow.end();
+  --shadowIt;
+  for (size_t i = length-1 ; i >= 0; i--) {
+    // @SJJ
+    _sym_push_path_constraint(
+        _sym_build_not_equal(
+            (*shadowIt != nullptr) ? *shadowIt : _sym_build_integer(s[i], 8),
+            cExpr),
+        /*taken*/ 1, reinterpret_cast<uintptr_t>(SYM(strrchr))
+        , /*@SJJ*/__current_pos_hash);
+    --shadowIt;
+  }
+  return result;
+}
+
 
 int SYM(memcmp)(const void *a, const void *b, size_t n) {
   tryAlternative(a, _sym_get_parameter_expression(0), SYM(memcmp));
@@ -559,7 +598,8 @@ int SYM(memcmp)(const void *a, const void *b, size_t n) {
   }
 
   _sym_push_path_constraint(allEqual, result == 0,
-                            reinterpret_cast<uintptr_t>(SYM(memcmp)));
+                            reinterpret_cast<uintptr_t>(SYM(memcmp))
+                            , /*@SJJ*/__current_pos_hash);
   return result;
 }
 
@@ -596,9 +636,66 @@ int SYM(bcmp)(const void *a, const void *b, size_t n) {
   }
 
   _sym_push_path_constraint(allEqual, result == 0,
-                            reinterpret_cast<uintptr_t>(SYM(bcmp)));
+                            reinterpret_cast<uintptr_t>(SYM(bcmp))
+                            , /*@SJJ*/__current_pos_hash);
   return result;
 }
+
+int SYM(strncmp)(const char *a, const char *b, size_t n) {
+  tryAlternative(a, _sym_get_parameter_expression(0), SYM(strncmp));
+  tryAlternative(b, _sym_get_parameter_expression(1), SYM(strncmp));
+  tryAlternative(n, _sym_get_parameter_expression(2), SYM(strncmp));
+
+  auto result = strncmp(a, b, n);
+
+  _sym_set_return_expression(nullptr);
+
+  if (isConcrete(a, n) && isConcrete(b, n))
+    return result;
+
+  auto aShadowIt = ReadOnlyShadow(a, n).begin_non_null();
+  auto bShadowIt = ReadOnlyShadow(b, n).begin_non_null();
+  auto *allEqual = _sym_build_equal(*aShadowIt, *bShadowIt);
+  for (size_t i = 1; i < n; i++) {
+    ++aShadowIt;
+    ++bShadowIt;
+    allEqual =
+        _sym_build_bool_and(allEqual, _sym_build_equal(*aShadowIt, *bShadowIt));
+  }
+
+  _sym_push_path_constraint(allEqual, result == 0,
+                            reinterpret_cast<uintptr_t>(SYM(strncmp))
+                            , /*@SJJ*/__current_pos_hash);
+  return result;
+}
+
+int SYM(strcmp)(const char *a, const char *b) {
+  tryAlternative(a, _sym_get_parameter_expression(0), SYM(strcmp));
+  tryAlternative(b, _sym_get_parameter_expression(1), SYM(strcmp));
+
+  auto result = strcmp(a, b);
+  _sym_set_return_expression(nullptr);
+  size_t lena = strlen(a), lenb = strlen(b);
+  size_t minlen = lena < lenb ? lena : lenb;
+  if (isConcrete(a, lena) && isConcrete(b, lenb))
+    return result;
+
+  auto aShadowIt = ReadOnlyShadow(a, strlen(a)).begin_non_null();
+  auto bShadowIt = ReadOnlyShadow(b, strlen(b)).begin_non_null();
+  auto *allEqual = _sym_build_equal(*aShadowIt, *bShadowIt);
+  for (size_t i = 1; i < minlen; i++) {
+    ++aShadowIt;
+    ++bShadowIt;
+    allEqual =
+        _sym_build_bool_and(allEqual, _sym_build_equal(*aShadowIt, *bShadowIt));
+  }
+
+  _sym_push_path_constraint(allEqual, result == 0,
+                            reinterpret_cast<uintptr_t>(SYM(strcmp))
+                            , /*@SJJ*/__current_pos_hash);
+  return result;
+}
+
 
 uint32_t SYM(ntohl)(uint32_t netlong) {
   auto netlongExpr = _sym_get_parameter_expression(0);
@@ -619,4 +716,6 @@ uint32_t SYM(ntohl)(uint32_t netlong) {
 
   return result;
 }
+
+
 }
