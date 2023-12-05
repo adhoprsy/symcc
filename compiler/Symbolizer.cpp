@@ -499,15 +499,17 @@ void Symbolizer::visitBranchInst(BranchInst &I) {
     return;
 
   IRBuilder<> IRB(&I);
-  // auto runtimeCall = buildRuntimeCall(IRB, runtime.pushPathConstraint,
-  //                                     {{I.getCondition(), true},
-  //                                      {I.getCondition(), false},
-  //                                      {getTargetPreferredInt(&I), false}});
-
   //@SJJ add a pos hash argument  
   auto position_hash = _get_hash_target_pos(I);
-  std::cerr << "\033[36m" <<"position_hash: " << position_hash << "\n" << "\033[0m";
+  #ifdef DIRECT_DEBUG
+    _debug_print_positon(position_hash);
+    std::cerr << "\033[36m" <<"position_hash: " << position_hash << "\n" << "\033[0m";
 
+    //DEBUG
+    DILocation *loc = I.getDebugLoc();
+    auto line = loc -> getLine();
+    IRB.CreateCall(runtime.dbgPrintPos, llvm::ConstantInt::get(IRB.getInt64Ty(), line));
+  #endif
   auto runtimeCall = buildRuntimeCall(IRB, runtime.pushPathConstraint,
                                       {{I.getCondition(), true},
                                        {I.getCondition(), false},
@@ -1125,7 +1127,7 @@ void Symbolizer::tryAlternative(IRBuilder<> &IRB, Value *V) {
     // @SJJ TODO: here?
     auto *pushAssertion = IRB.CreateCall(
         runtime.pushPathConstraint,
-        {destAssertion, IRB.getInt1(true), getTargetPreferredInt(V)});
+        {destAssertion, IRB.getInt1(true), getTargetPreferredInt(V),llvm::ConstantInt::get(IRB.getInt64Ty(), 0)});
     registerSymbolicComputation(SymbolicComputation(
         concreteDestExpr, pushAssertion, {Input(V, 0, destAssertion)}));
   }

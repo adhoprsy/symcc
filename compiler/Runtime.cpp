@@ -85,7 +85,9 @@ Runtime::Runtime(Module &M) {
   pushPathConstraint =
       import(M, "_sym_push_path_constraint", voidT, ptrT, int1T, intPtrType, 
       /*@SJJ pos_hash*/ int64T);
-
+  #ifdef DIRECT_DEBUG
+  dbgPrintPos = import(M, "_debug_print_positon", voidT, int64T);
+  #endif
   // Overflow arithmetic
   buildAddOverflow =
       import(M, "_sym_build_add_overflow", ptrT, ptrT, ptrT, int1T, int1T);
@@ -228,13 +230,14 @@ uint64_t _get_hash_target_pos(const llvm::Instruction &I) {
   std::cerr << abspath.string() << "\n";
   std::cerr << line << "\n";
 
-  uint64_t hash1 = 0, hash2 = 0;
+  uint64_t hash1 = 0ull, hash2 = 0ull;
 
   for (const auto& c : abspath.string())
-    hash1 = (hash1 * 255 + c) % 998244353; 
+    hash1 = (hash1 * 255ull + c) % 998244353ull; 
 
   for (const auto& c : std::to_string(line))
-    hash2 = (hash2 * 131 + c) % 1000000007; 
+    hash2 = (hash2 * 131ull + c) % 1000000007ull; 
 
   return (hash1 << 32) ^ hash2;
+  //return line;
 }

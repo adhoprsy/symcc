@@ -92,10 +92,20 @@ struct Runtime {
   /// Mapping from unary operators to the functions that build the
   /// corresponding symbolic expressions.
   std::array<SymFnT, llvm::Instruction::UnaryOpsEnd> unaryOperatorHandlers{};
+
+
+  // @SJJ debug
+  #ifdef DIRECT_DEBUG
+    SymFnT dbgPrintPos{};
+  #endif
 };
 
 bool isInterceptedFunction(const llvm::Function &f);
 
 //@SJJ
 uint64_t _get_hash_target_pos(const llvm::Instruction &I);
+#ifdef DIRECT_DEBUG
+void _debug_print_positon(uint64_t line);
+#endif
+
 #endif

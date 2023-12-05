@@ -194,7 +194,7 @@ void _sym_initialize(void) {
 
     // @SJJ
     for (auto line : g_config.directedTargetLine) {
-      std::cerr << "\033[36m" << "- target:" << g_config.directedTargetFile << ' '
+      std::cerr << "\033[36m" << "Loaded target:" << g_config.directedTargetFile << ' '
                                             << line << '\n' << "\033[0m";
       g_target_hash.insert( _hash_target_pos(g_config.directedTargetFile, 
                                             line) );
@@ -340,8 +340,9 @@ void _sym_push_path_constraint(SymExpr constraint, int taken,
   if (constraint == nullptr)
     return;
 
-  std::cerr << "\033[33m" <<  "[ DEBUG ]" << "\033[0m pos_hash: " << pos_hash << "\n";
-
+  #ifdef DIRECT_DEBUG
+    std::cerr << "\033[33m" <<  "[ DEBUG ]" << "\033[0m pos_hash: " << pos_hash << "\n";
+  #endif
   // @SJJ check hash
   if (g_config.directedMode) {
     g_solver->addJcc(allocatedExpressions.at(constraint), taken != 0, site_id,

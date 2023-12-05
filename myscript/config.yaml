@@ -1,4 +1,37 @@
-symcc : /home/thematch/Desktop/mysymcc/qsym/symcc
-sym++ : /home/thematch/Desktop/mysymcc/qsym/sym++
-output_dir : /home/thematch/Desktop/mysymcc/myscript/out
-command : @@
+# 运行前需要的配置
+# 其他在可视化平台动态配置
+
+Visualize:
+  ip:
+  port:
+
+fuzzer:
+  # fuzzer初始输入文件夹路径
+  input_dir:
+  # fuzzer输出文件夹路径（内部包含各个fuzzer的自路径）
+  output_dir:
+  # 模糊测试插桩的目标程序二进制文件路径
+  target_bin:
+  # afl style (replace bin with @@)
+  target_args:
+
+tracer:
+  # 要分析的fuzzer名称，默认default
+  fuzzer_name:
+  # trace插桩的目标程序二进制文件路径
+  coverage_bin:
+  # 使用的cpu核心数量
+  cpu_core:
+  # 分析数据json文件输出位置
+  json_dir:
+
+symbolic:
+  # symcc sym++所在文件夹路径（build路径）
+  symcc_perfix: 
+  # 符号执行输出文件夹路径
+  result_dir: 
+
+direct:
+  # 定向测试相关配置需要在该文件夹下配置
+  # 配置文件所在路径
+  config_dir:

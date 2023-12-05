@@ -490,13 +490,22 @@ SymExpr _sym_build_bit_to_bool(SymExpr expr) {
 //@SJJ
 uint64_t _hash_target_pos(const std::string& str1, const std::string& str2) {
   
-  uint64_t hash1 = 0, hash2 = 0;
+  uint64_t hash1 = 0ull, hash2 = 0ull;
 
   for (const auto& c : str1)
-    hash1 = (hash1 * 255 + c) % 998244353; 
+    hash1 = (hash1 * 255ull + c) % 998244353ull; 
 
   for (const auto& c : str2)
-    hash2 = (hash2 * 131 + c) % 1000000007; 
+    hash2 = (hash2 * 131ull + c) % 1000000007ull; 
+
+  // fprintf(stderr, "_hash_target_pos: %lu\n", (uint64_t)(atoi(str2.c_str())));
 
   return (hash1 << 32) ^ hash2;
+  // return (uint64_t)atoi(str2.c_str());
 }
+
+#ifdef DIRECT_DEBUG
+void _debug_print_positon(uint64_t line) {
+  fprintf(stderr, "current line number : %lu\n", line);
+}
+#endif

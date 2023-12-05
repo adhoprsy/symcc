@@ -67,12 +67,12 @@ uint64_t inputOffset = 0;
 /// Tell the solver to try an alternative value than the given one.
 template <typename V, typename F>
 void tryAlternative(V value, SymExpr valueExpr, F caller) {
-  std::cerr << "libc pos_hash : " << __current_pos_hash << std::endl;
+  //std::cerr << "libc pos_hash : " << __current_pos_hash << std::endl;
   if (valueExpr) {
-    std::cerr << "ok\n";
+    //std::cerr << "ok\n";
     _sym_push_path_constraint(
         _sym_build_equal(valueExpr, _sym_build_integer(value, sizeof(value) * 8)),
-        true, reinterpret_cast<uintptr_t>(caller), /*@SJJ*/__current_pos_hash);
+        true, reinterpret_cast<uintptr_t>(caller), /*@SJJ*/0);
   }
 }
 
@@ -650,8 +650,10 @@ int SYM(strncmp)(const char *a, const char *b, size_t n) {
 
   _sym_set_return_expression(nullptr);
 
-  if (isConcrete(a, n) && isConcrete(b, n))
+  if (isConcrete(a, n) && isConcrete(b, n)) {
+    std::cerr << "=== libcwrapper strncmp is concrete\n";
     return result;
+  }
 
   auto aShadowIt = ReadOnlyShadow(a, n).begin_non_null();
   auto bShadowIt = ReadOnlyShadow(b, n).begin_non_null();
