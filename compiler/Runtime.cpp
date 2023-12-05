@@ -229,9 +229,10 @@ uint64_t _get_hash_target_pos(const llvm::Instruction &I) {
   fs::path filepath = (loc->getFilename()).str();
   fs::path abspath = fs::canonical(fs::absolute(filepath));
 
+  #ifdef DIRECT_DEBUG
   std::cerr << abspath.string() << "\n";
   std::cerr << line << "\n";
-
+  #endif
   uint64_t hash1 = 0ull, hash2 = 0ull;
 
   for (const auto& c : abspath.string())
