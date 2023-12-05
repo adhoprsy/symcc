@@ -17,6 +17,8 @@
 #include <llvm/ADT/StringSet.h>
 #include <llvm/Config/llvm-config.h>
 #include <llvm/IR/IRBuilder.h>
+#include <llvm/Support/Debug.h>
+#include <llvm/IR/DebugInfo.h>
 
 //@SJJ
 #include <filesystem>
