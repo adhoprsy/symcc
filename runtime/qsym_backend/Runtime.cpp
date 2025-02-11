@@ -314,8 +314,14 @@ void _sym_push_path_constraint(SymExpr constraint, int taken,
                                uintptr_t site_id) {
   if (constraint == nullptr)
     return;
-
-  g_solver->addJcc(allocatedExpressions.at(constraint), taken != 0, site_id);
+  
+  std::cerr << "_sym_push_path_constraint: \n...constraint: ";
+  constraint->print(std::cerr, 0);
+  std::cerr << "\n...expression: ";
+  auto expression = allocatedExpressions.at(constraint);
+  expression->print(std::cerr, 0);
+  std::cerr << "\n";
+  g_solver->addJcc(expression, taken != 0, site_id);
 }
 
 SymExpr _sym_get_input_byte(size_t offset, uint8_t value) {

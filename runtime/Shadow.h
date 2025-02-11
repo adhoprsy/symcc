@@ -20,6 +20,7 @@
 #include <cassert>
 #include <cstring>
 #include <map>
+#include <cstdint>
 
 #include <Runtime.h>
 

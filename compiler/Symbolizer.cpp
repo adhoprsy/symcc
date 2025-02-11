@@ -454,6 +454,7 @@ void Symbolizer::visitSelectInst(SelectInst &I) {
 void Symbolizer::visitCmpInst(CmpInst &I) {
   // ICmp is integer comparison, FCmp compares floating-point values; we
   // simply include either in the resulting expression.
+  errs() << "visit CmpInst: " << I << " | " << "\n";
 
   IRBuilder<> IRB(&I);
   SymFnT handler = runtime.comparisonHandlers.at(I.getPredicate());
@@ -1074,14 +1075,22 @@ Symbolizer::SymbolicComputation Symbolizer::forceBuildRuntimeCall(
   }
   auto *call = IRB.CreateCall(function, functionArgs);
 
+  errs() << "forceBuildRuntimeCall\n"; 
   std::vector<Input> inputs;
   for (unsigned i = 0; i < args.size(); i++) {
     const auto &[arg, symbolic] = args[i];
-    if (symbolic)
+    if (symbolic) {
+      errs() << "...Input: "  << *arg << "\n" 
+             << "...get SE: " << *getSymbolicExpressionOrNull(arg) <<  "\n" 
+             << "...i_th : "  << i << "\n" 
+             << "...call : " << *call << "\n";
       inputs.push_back(Input(arg, i, call));
+    }
   }
 
-  return SymbolicComputation(call, call, inputs);
+  auto computation = SymbolicComputation(call, call, inputs);
+  errs() << "computataion: " << computation << "\n";
+  return computation;
 }
 
 void Symbolizer::tryAlternative(IRBuilder<> &IRB, Value *V) {
