@@ -85,6 +85,13 @@ void Symbolizer::shortCircuitExpressionUses() {
     assert(!symbolicComputation.inputs.empty() &&
            "Symbolic computation has no inputs");
 
+    // errs() << "Input of computation: " << *symbolicComputation.firstInstruction << 
+    //  " - " << *symbolicComputation.lastInstruction << "\n";
+    // for (const auto& input : symbolicComputation.inputs) {
+    //   errs() << " - concreteValue: "<< *input.concreteValue
+    //          << " - user: " << *input.user << "\n";
+    // }
+
     IRBuilder<> IRB(symbolicComputation.firstInstruction);
 
     // Build the check whether any input expression is non-null (i.e., there
@@ -459,9 +466,12 @@ void Symbolizer::visitCmpInst(CmpInst &I) {
   IRBuilder<> IRB(&I);
   SymFnT handler = runtime.comparisonHandlers.at(I.getPredicate());
   assert(handler && "Unable to handle icmp/fcmp variant");
+  // errs() << "=== visitcmpinst called build runtime call\n";
   auto runtimeCall =
       buildRuntimeCall(IRB, handler, {I.getOperand(0), I.getOperand(1)});
+  // errs() << "=== visitcmpinst register symbolic computation\n";
   registerSymbolicComputation(runtimeCall, &I);
+  // errs() << "=== === === ===\n";
 }
 
 void Symbolizer::visitReturnInst(ReturnInst &I) {
@@ -1074,22 +1084,33 @@ Symbolizer::SymbolicComputation Symbolizer::forceBuildRuntimeCall(
     functionArgs.push_back(symbolic ? getSymbolicExpressionOrNull(arg) : arg);
   }
   auto *call = IRB.CreateCall(function, functionArgs);
-
-  errs() << "forceBuildRuntimeCall\n"; 
+  
   std::vector<Input> inputs;
   for (unsigned i = 0; i < args.size(); i++) {
     const auto &[arg, symbolic] = args[i];
     if (symbolic) {
-      errs() << "...Input: "  << *arg << "\n" 
-             << "...get SE: " << *getSymbolicExpressionOrNull(arg) <<  "\n" 
-             << "...i_th : "  << i << "\n" 
-             << "...call : " << *call << "\n";
+      // if (function.getCallee()->getName() == "_sym_push_path_constraint") {
+      // errs() << "forceBuildRuntimeCall\n"; 
+      // errs() << "...Input(arg): "  << *arg << "\n" 
+      //        << "...get SE: " << *getSymbolicExpressionOrNull(arg) <<  "\n" 
+      //        << "...i_th : "  << i << "\n" 
+      //        << "...call : " << *call << "\n";
+      // }
       inputs.push_back(Input(arg, i, call));
+    }
+    else {
+      // if (function.getCallee()->getName() == "_sym_push_path_constraint") {
+      // errs() << "forceBuildRuntimeCall\n"; 
+      // errs() << "...Input(no sym arg): "  << *arg << "\n" 
+      //        << "...i_th : "  << i << "\n" 
+      //        << "...call : " << *call << "\n";
+      // }
+
     }
   }
 
   auto computation = SymbolicComputation(call, call, inputs);
-  errs() << "computataion: " << computation << "\n";
+  // errs() << "computataion: " << computation << "\n";
   return computation;
 }
 

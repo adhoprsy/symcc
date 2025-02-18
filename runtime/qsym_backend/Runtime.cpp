@@ -315,8 +315,6 @@ void _sym_push_path_constraint(SymExpr constraint, int taken,
   if (constraint == nullptr)
     return;
   
-  std::cerr << "_sym_push_path_constraint: \n...constraint: ";
-  constraint->print(std::cerr, 0);
   std::cerr << "\n...expression: ";
   auto expression = allocatedExpressions.at(constraint);
   expression->print(std::cerr, 0);
