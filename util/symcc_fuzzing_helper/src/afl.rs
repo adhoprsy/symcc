@@ -1,8 +1,9 @@
 use anyhow::{ensure, Context, Result};
-use std::collections::HashSet;
+use bytes::{Buf, Bytes};
+use std::collections::{HashMap, HashSet};
 use std::ffi::OsString;
 use std::fs::{self, File};
-use std::io::{self, Read};
+use std::io::{self, BufRead, BufReader, Read};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
@@ -10,59 +11,102 @@ use crate::testcase::{insert_input_file, TestcaseScore};
 
 /// A coverage map as used by AFL.
 pub struct AflMap {
-    data: Option<Vec<u8>>,
+    pub data: Option<Vec<u8>>,
+    pub bb_bitmap: Option<BitMap>,
 }
 
 impl AflMap {
     /// Create an empty map.
     pub fn new() -> AflMap {
-        AflMap { data: None }
+        AflMap {
+            data: None,
+            bb_bitmap: None,
+        }
     }
 
     /// Load a map from disk.
-    pub fn load(path: impl AsRef<Path>) -> Result<AflMap> {
-        let data = fs::read(&path).with_context(|| {
+    pub fn load(aflmap_path: impl AsRef<Path>, bb_bitmap_path: impl AsRef<Path>) -> Result<AflMap> {
+        let data = fs::read(&aflmap_path).with_context(|| {
             format!(
                 "Failed to read the AFL bitmap that \
                  afl-showmap should have generated at {}",
-                path.as_ref().display()
+                aflmap_path.as_ref().display()
             )
         })?;
-        Ok(AflMap { data: Some(data) })
+
+        let bb_bitmap = BitMap::from_u8(fs::read(&bb_bitmap_path).with_context(|| {
+            format!(
+                "Failed to read the basic block occurance bitmap that \
+                 afl-showmap should have generated at {}",
+                bb_bitmap_path.as_ref().display()
+            )
+        })?);
+        Ok(AflMap {
+            data: Some(data),
+            bb_bitmap: Some(bb_bitmap),
+        })
     }
 
     /// Merge two coverage maps in place.
-    fn merge_vec(data: &mut Vec<u8>, new_data: Vec<u8>) -> Result<bool> {
-        let mut interesting = false;
-        ensure!(
-            data.len() == new_data.len(),
-            "Coverage maps must have the same size ({} and {})",
-            data.len(),
-            new_data.len(),
-        );
-        for (known, new) in data.iter_mut().zip(new_data.iter()) {
-            if *known != (*known | new) {
-                *known |= new;
-                interesting = true;
+    fn merge_vec(&mut self, new_data: Vec<u8>) -> Result<bool> {
+        if let Some(ref mut data) = self.data {
+            let mut interesting = false;
+            ensure!(
+                data.len() == new_data.len(),
+                "Coverage maps must have the same size ({} and {})",
+                data.len(),
+                new_data.len(),
+            );
+            for (known, new) in data.iter_mut().zip(new_data.iter()) {
+                if *known != (*known | new) {
+                    *known |= new;
+                    interesting = true;
+                }
             }
+            Ok(interesting)
+        } else {
+            Ok(false)
         }
-        Ok(interesting)
     }
 
+    fn merge_bitmap(&mut self, new_data: Option<BitMap>) -> Result<bool> {
+        if !new_data.is_some() {
+            return Ok(false);
+        }
+        if let Some(ref mut bitmap) = self.bb_bitmap {
+            bitmap.merge_vec(new_data.unwrap())
+        } else {
+            Ok(false)
+        }
+    }
     /// Merge with another coverage map in place.
     ///
     /// Return true if the map has changed, i.e., if the other map yielded new
     /// coverage.
     pub fn merge(&mut self, other: AflMap) -> Result<bool> {
         match (&mut self.data, other.data) {
-            (Some(data), Some(new_data)) => AflMap::merge_vec(data, new_data),
+            (Some(_), Some(new_data)) => {
+                Ok(self.merge_vec(new_data)? | self.merge_bitmap(other.bb_bitmap)?)
+            }
             (Some(_), None) => Ok(false),
             (None, Some(new_data)) => {
                 self.data = Some(new_data);
+                self.bb_bitmap = other.bb_bitmap;
                 Ok(true)
             }
             (None, None) => Ok(false),
         }
+    }
+
+    pub fn edge_hash(from: &u32, to: &u32) -> usize {
+        return ((from >> 1) ^ to) as usize;
+    }
+
+    pub fn is_covered(&self, from: &u32, to: &u32) -> bool {
+        return match self.data {
+            Some(ref inner) => inner[Self::edge_hash(from, to)] != 0,
+            _ => false,
+        };
     }
 }
 
@@ -85,6 +129,8 @@ pub struct AflConfig {
 
     /// The fuzzer instance's queue of test cases.
     queue: PathBuf,
+
+    pub map_size: usize,
 }
 
 /// Possible results of afl-showmap.
@@ -145,6 +191,10 @@ impl AflConfig {
             use_qemu_mode: afl_command.contains(&"-Q".into()),
             target_command: afl_target_command,
             queue: fuzzer_output.as_ref().join("queue"),
+            map_size: std::env::var("AFL_MAP_SIZE")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(65536),
         })
     }
 
@@ -175,6 +225,7 @@ impl AflConfig {
     pub fn run_showmap(
         &self,
         testcase_bitmap: impl AsRef<Path>,
+        testcase_bb_bitmap: impl AsRef<Path>,
         testcase: impl AsRef<Path>,
     ) -> Result<AflShowmapResult> {
         let mut afl_show_map = Command::new(&self.show_map);
@@ -218,18 +269,128 @@ impl AflConfig {
             .expect("No exit code available for afl-showmap")
         {
             0 => {
-                let map = AflMap::load(&testcase_bitmap).with_context(|| {
-                    format!(
-                        "Failed to read the AFL bitmap that \
+                let map =
+                    AflMap::load(&testcase_bitmap, &testcase_bb_bitmap).with_context(|| {
+                        format!(
+                            "Failed to read the AFL bitmap that \
                          afl-showmap should have generated at {}",
-                        testcase_bitmap.as_ref().display()
-                    )
-                })?;
+                            testcase_bitmap.as_ref().display()
+                        )
+                    })?;
                 Ok(AflShowmapResult::Success(Box::new(map)))
             }
             1 => Ok(AflShowmapResult::Hang),
             2 => Ok(AflShowmapResult::Crash),
             unexpected => panic!("Unexpected return code {} from afl-showmap", unexpected),
         }
+    }
+}
+
+pub struct EdgeMap(pub HashMap<u32, HashSet<u32>>);
+
+impl EdgeMap {
+    pub fn read_from_file(filename: &str) -> Result<EdgeMap> {
+        let f = File::open(filename)?;
+        let reader = BufReader::new(f);
+
+        let mut edges = HashMap::new();
+
+        for line in reader.lines() {
+            let mut sons = HashSet::new();
+            let mut buf = Bytes::from(line?.into_bytes());
+            let parent_id = buf.get_u32();
+            let num_son = buf.get_u32();
+            for _ in 0..num_son {
+                let son_id = buf.get_u32();
+                sons.insert(son_id);
+            }
+            edges.insert(parent_id, sons);
+        }
+
+        log::debug!("Read {} edges from {}", edges.len(), filename);
+
+        Ok(EdgeMap { 0: edges })
+    }
+}
+
+pub struct BitMap(pub Vec<u64>);
+impl BitMap {
+    pub fn new(map_size: usize) -> Self {
+        assert!(
+            map_size % std::mem::size_of::<u64>() == 0,
+            "Map size must be a multiple of 64"
+        );
+        let inner = Vec::with_capacity(map_size / 64);
+        Self { 0: inner }
+    }
+
+    pub fn from_u8(mut from: Vec<u8>) -> Self {
+        assert!(
+            from.len() % std::mem::size_of::<u64>() == 0,
+            "input length must be a multiple of 64"
+        );
+        let ptr = from.as_mut_ptr();
+        let len = from.len() / std::mem::size_of::<u64>();
+        let cap = from.capacity() / std::mem::size_of::<u64>();
+
+        // 防止 `bytes` 被 Drop（避免 double-free）
+        std::mem::forget(from);
+
+        // 直接重新解释内存布局（无拷贝）
+        Self {
+            0: unsafe { Vec::from_raw_parts(ptr as *mut u64, len, cap) },
+        }
+    }
+
+    pub fn merge_vec(&mut self, other: Self) -> Result<bool> {
+        let mut interesting = false;
+        ensure!(
+            self.0.len() == other.0.len(),
+            "bitmaps must have the same size ({} and {})",
+            self.0.len(),
+            other.0.len(),
+        );
+        for (known, new) in self.0.iter_mut().zip(other.0.iter()) {
+            if *known != (*known | new) {
+                *known |= new;
+                interesting = true;
+            }
+        }
+        Ok(interesting)
+    }
+
+    #[inline]
+    pub fn contains(&self, index: u32) -> bool {
+        let word = index >> 6;
+        let bit = index & 63;
+        if word as usize > self.0.len() {
+            log::warn!("bitmap out of range, index : {}", index);
+            return false;
+        }
+        self.0
+            .get(word as usize)
+            .map_or(false, |&x| (x >> bit) & 1 != 0)
+    }
+
+    #[inline]
+    pub fn set(&mut self, index: u32) {
+        let word = index >> 6;
+        let bit = index & 63;
+        if word as usize > self.0.len() {
+            log::warn!("bitmap out of range, index : {}", index);
+            return;
+        }
+        self.0[word as usize] |= 1 << bit;
+    }
+
+    #[inline]
+    pub fn unset(&mut self, index: u32) {
+        let word = index >> 6;
+        let bit = index & 63;
+        if word as usize > self.0.len() {
+            log::warn!("bitmap out of range, index : {}", index);
+            return;
+        }
+        self.0[word as usize] &= !(1 << bit);
     }
 }

@@ -1,3 +1,4 @@
+use crate::afl::AflMap;
 use crate::symcc::{self, SymCC};
 
 use anyhow::{Context, Result};

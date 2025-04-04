@@ -128,8 +128,9 @@ pub fn process_new_testcase(
     log::debug!("Processing test case {}", testcase.as_ref().display());
 
     let testcase_bitmap_path = tmp_dir.as_ref().join("testcase_bitmap");
+    let testcase_bb_bitmap_path = tmp_dir.as_ref().join("testcase_bb_bitmap");
     match afl_config
-        .run_showmap(&testcase_bitmap_path, &testcase)
+        .run_showmap(&testcase_bitmap_path, &testcase_bb_bitmap_path, &testcase)
         .with_context(|| {
             format!(
                 "Failed to check whether test case {} is interesting",
@@ -137,7 +138,7 @@ pub fn process_new_testcase(
             )
         })? {
         AflShowmapResult::Success(testcase_bitmap) => {
-            let interesting = state.current_bitmap.merge(*testcase_bitmap)?;
+            let interesting = state.merge_maps(*testcase_bitmap)?;
             if interesting {
                 copy_testcase(&testcase, &mut state.queue, parent).with_context(|| {
                     format!(

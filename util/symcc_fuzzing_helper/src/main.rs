@@ -24,7 +24,7 @@ use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::{Duration, Instant};
 
-use afl::{AflConfig, AflShowmapResult};
+use afl::AflConfig;
 use fuzzstate::State;
 use symcc::SymCC;
 
@@ -42,11 +42,15 @@ struct CLI {
 
     /// The AFL output directory
     #[clap(short = 'o', long = "output")]
-    output_dir: PathBuf,
+    afl_output_dir: PathBuf,
 
     /// Name to use for SymCC
     #[clap(short = 'n')]
     name: String,
+
+    // Path to extracted conditional branch edges
+    #[clap(short = 'e', long = "edges")]
+    edge_path: PathBuf,
 
     /// Enable verbose logging
     #[clap(short = 'v')]
@@ -67,21 +71,24 @@ fn main() -> Result<()> {
         })
         .init();
 
-    if !options.output_dir.is_dir() {
+    if !options.afl_output_dir.is_dir() {
         log::error!(
             "The directory {} does not exist!",
-            options.output_dir.display()
+            options.afl_output_dir.display()
         );
         return Ok(());
     }
 
-    let afl_queue = options.output_dir.join(&options.fuzzer_name).join("queue");
+    let afl_queue = options
+        .afl_output_dir
+        .join(&options.fuzzer_name)
+        .join("queue");
     if !afl_queue.is_dir() {
         log::error!("The AFL queue {} does not exist!", afl_queue.display());
         return Ok(());
     }
 
-    let symcc_dir = options.output_dir.join(&options.name);
+    let symcc_dir = options.afl_output_dir.join(&options.name);
     if symcc_dir.is_dir() {
         log::error!(
             "{} already exists; we do not currently support resuming",
@@ -92,9 +99,9 @@ fn main() -> Result<()> {
 
     let symcc = SymCC::new(symcc_dir.clone(), &options.command);
     log::debug!("SymCC configuration: {:?}", &symcc);
-    let afl_config = AflConfig::load(options.output_dir.join(&options.fuzzer_name))?;
+    let afl_config = AflConfig::load(options.afl_output_dir.join(&options.fuzzer_name))?;
     log::debug!("AFL configuration: {:?}", &afl_config);
-    let mut state = State::initialize(symcc_dir)?;
+    let mut state = State::initialize(symcc_dir, options.edge_path)?;
 
     loop {
         match afl_config
