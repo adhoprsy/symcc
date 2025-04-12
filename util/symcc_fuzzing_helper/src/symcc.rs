@@ -13,8 +13,10 @@
 // SymCC. If not, see <https://www.gnu.org/licenses/>.
 
 use anyhow::{Context, Result};
+use itertools::Itertools;
 use regex::Regex;
 use std::cmp;
+use std::collections::HashSet;
 use std::ffi::OsString;
 use std::fs::{self, File};
 use std::io;
@@ -26,7 +28,7 @@ use std::time::{Duration, Instant};
 
 use crate::testcase::{insert_input_file, TestcaseDir, TestcaseScore};
 
-const TIMEOUT: u32 = 90;
+const TIMEOUT: u32 = 300;
 
 /// The run-time configuration of SymCC.
 #[derive(Debug)]
@@ -48,6 +50,10 @@ pub struct SymCC {
 pub struct SymCCResult {
     /// The generated test cases.
     pub test_cases: Vec<PathBuf>,
+
+    /// generated dictionaries
+    pub symdict: Vec<PathBuf>,
+
     /// Whether the process was killed (e.g., out of memory, timeout).
     pub killed: bool,
     /// The total time taken by the execution.
@@ -101,6 +107,8 @@ impl SymCC {
         &self,
         input: impl AsRef<Path>,
         output_dir: impl AsRef<Path>,
+        symdict_dir: impl AsRef<Path>,
+        frontiers: &HashSet<u32>,
     ) -> Result<SymCCResult> {
         fs::copy(&input, &self.input_file).with_context(|| {
             format!(
@@ -117,6 +125,8 @@ impl SymCC {
             )
         })?;
 
+        let frontiers_string = frontiers.iter().sorted().map(|x| x.to_string()).join(",");
+
         let mut analysis_command = Command::new("timeout");
         analysis_command
             .args(&["-k", "5", &TIMEOUT.to_string()])
@@ -124,6 +134,8 @@ impl SymCC {
             .env("SYMCC_ENABLE_LINEARIZATION", "1")
             .env("SYMCC_AFL_COVERAGE_MAP", &self.bitmap)
             .env("SYMCC_OUTPUT_DIR", output_dir.as_ref())
+            .env("SYMCC_SYMDICT_DIR", symdict_dir.as_ref())
+            .env("SYMCC_DIRECT_TARGETS", frontiers_string)
             .stdout(Stdio::null())
             .stderr(Stdio::piped()); // capture SMT logs
 
@@ -190,6 +202,24 @@ impl SymCC {
             .map(|entry| entry.path())
             .collect();
 
+        let new_symdict = fs::read_dir(&symdict_dir)
+            .with_context(|| {
+                format!(
+                    "Failed to read the generated symdict at {}",
+                    symdict_dir.as_ref().display()
+                )
+            })?
+            .collect::<io::Result<Vec<_>>>()
+            .with_context(|| {
+                format!(
+                    "Failed to read all test cases from {}",
+                    symdict_dir.as_ref().display()
+                )
+            })?
+            .iter()
+            .map(|entry| entry.path())
+            .collect();
+
         let solver_time = SymCC::parse_solver_time(result.stderr);
         if solver_time.is_some() && solver_time.unwrap() > total_time {
             log::warn!("Backend reported inaccurate solver time!");
@@ -197,6 +227,7 @@ impl SymCC {
 
         Ok(SymCCResult {
             test_cases: new_tests,
+            symdict: new_symdict,
             killed,
             time: total_time,
             solver_time: solver_time.map(|t| cmp::min(t, total_time)),

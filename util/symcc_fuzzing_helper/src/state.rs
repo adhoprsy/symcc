@@ -9,7 +9,9 @@ use tempfile::tempdir;
 use crate::afl::{AflConfig, AflMap, EdgeMap};
 use crate::stats::Stats;
 use crate::symcc::SymCC;
-use crate::testcase::{copy_testcase, process_new_testcase, TestcaseDir, TestcaseResult};
+use crate::testcase::{
+    copy_new_symdict, copy_testcase, process_new_testcase, TestcaseDir, TestcaseResult,
+};
 
 /// Mutable run-time state.
 ///
@@ -21,7 +23,9 @@ pub struct State {
     // all edges of conditional branches
     pub uncovered_edges: EdgeMap,
 
+    // frontier blocks of current seed
     pub current_frontier_blocks: HashSet<u32>,
+
     /// The AFL test cases that have been analyzed so far.
     pub processed_files: HashSet<PathBuf>,
 
@@ -33,6 +37,9 @@ pub struct State {
 
     /// The place for new test cases that crash.
     pub crashes: TestcaseDir,
+
+    /// place for symdict of seeds
+    pub symdicts: TestcaseDir,
 
     /// Run-time statistics.
     pub stats: Stats,
@@ -52,13 +59,14 @@ impl State {
     pub fn initialize(output_dir: impl AsRef<Path>, edge_path: impl AsRef<Path>) -> Result<Self> {
         let symcc_dir = output_dir.as_ref();
 
-        fs::create_dir(&symcc_dir).with_context(|| {
+        fs::create_dir(symcc_dir).with_context(|| {
             format!("Failed to create SymCC's directory {}", symcc_dir.display())
         })?;
         let symcc_queue =
             TestcaseDir::new(symcc_dir.join("queue")).context("Failed to create SymCC's queue")?;
         let symcc_hangs = TestcaseDir::new(symcc_dir.join("hangs"))?;
         let symcc_crashes = TestcaseDir::new(symcc_dir.join("crashes"))?;
+        let symdicts = TestcaseDir::new(symcc_dir.join("symdicts"))?;
         let stats_file = File::create(symcc_dir.join("stats"))?;
 
         Ok(State {
@@ -69,6 +77,7 @@ impl State {
             queue: symcc_queue,
             hangs: symcc_hangs,
             crashes: symcc_crashes,
+            symdicts,
             stats: Default::default(), // Is this bad style?
             last_stats_output: Instant::now(),
             stats_file,
@@ -92,10 +101,16 @@ impl State {
         let mut num_total = 0u64;
 
         let symcc_result = symcc
-            .run(&input, tmp_dir.path().join("output"))
+            .run(
+                &input,
+                tmp_dir.path().join("output"),
+                tmp_dir.path().join("symdict"),
+                &self.current_frontier_blocks,
+            )
             .context("Failed to run SymCC")?;
+
         for new_test in symcc_result.test_cases.iter() {
-            let res = process_new_testcase(&new_test, &input, &tmp_dir, &afl_config, self)?;
+            let res = process_new_testcase(new_test, &input, &tmp_dir, afl_config, self)?;
 
             num_total += 1;
             if res == TestcaseResult::New {
@@ -109,6 +124,15 @@ impl State {
             num_total,
             num_interesting
         );
+
+        for new_symdict in symcc_result.symdict.iter() {
+            copy_new_symdict(new_symdict, &input, &mut self.symdicts)?;
+            log::info!(
+                "Generated dictionary {} for {}",
+                new_symdict.display(),
+                input.as_ref().display()
+            );
+        }
 
         if symcc_result.killed {
             log::info!(
@@ -143,15 +167,12 @@ impl State {
                 }
             }
             // not fully covered
-            if new_covered < sons.len() {
-                return true;
-            } else {
-                return false;
-            }
+            return new_covered < sons.len();
         }
-        return false;
+        false
     }
 
+    // update current frontier base on global coverage and seed trace map
     pub fn update_frontier(&mut self, new_map: &AflMap) {
         if new_map.bb_bitmap.is_none() || new_map.data.is_none() {
             return;
@@ -165,7 +186,7 @@ impl State {
             if *x == 0 {
                 continue;
             }
-            for bit in 0..64 as usize {
+            for bit in 0..64 {
                 if x & (1 << bit) == 0 {
                     continue;
                 }

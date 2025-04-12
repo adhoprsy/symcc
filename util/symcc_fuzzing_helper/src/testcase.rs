@@ -2,10 +2,10 @@ use anyhow::{bail, ensure, Context, Result};
 use std::ffi::{OsStr, OsString};
 use std::fs;
 use std::path::{Path, PathBuf};
+use tempfile::tempdir;
 
 use crate::afl::{AflConfig, AflShowmapResult};
-use crate::fuzzstate::State;
-use crate::symcc;
+use crate::state::State;
 
 /// Replace the first '@@' in the given command line with the input file.
 pub fn insert_input_file<S: AsRef<OsStr>, P: AsRef<Path>>(
@@ -77,7 +77,7 @@ impl TestcaseScore {
         TestcaseScore {
             new_coverage: false,
             derived_from_seed: false,
-            file_size: std::i128::MIN,
+            file_size: i128::MIN,
             base_name: OsString::from(""),
         }
     }
@@ -116,17 +116,18 @@ pub enum TestcaseResult {
     Crash,
 }
 
-/// Check if the given test case provides new coverage, crashes, or times out;
-/// copy it to the corresponding location.
-pub fn process_new_testcase(
+pub fn preprocess_coverage(
     testcase: impl AsRef<Path>,
-    parent: impl AsRef<Path>,
-    tmp_dir: impl AsRef<Path>,
     afl_config: &AflConfig,
     state: &mut State,
 ) -> Result<TestcaseResult> {
-    log::debug!("Processing test case {}", testcase.as_ref().display());
+    log::debug!(
+        "invoking afl-showmap to preprocess seed trace of {}",
+        testcase.as_ref().display()
+    );
 
+    let tmp_dir =
+        tempdir().context("Failed to create a temporary directory for this execution of SymCC")?;
     let testcase_bitmap_path = tmp_dir.as_ref().join("testcase_bitmap");
     let testcase_bb_bitmap_path = tmp_dir.as_ref().join("testcase_bb_bitmap");
     match afl_config
@@ -139,6 +140,56 @@ pub fn process_new_testcase(
         })? {
         AflShowmapResult::Success(testcase_bitmap) => {
             let interesting = state.merge_maps(*testcase_bitmap)?;
+            if interesting {
+                Ok(TestcaseResult::New)
+            } else {
+                Ok(TestcaseResult::Uninteresting)
+            }
+        }
+        AflShowmapResult::Hang => {
+            log::info!(
+                "Ignoring new test case {} because afl-showmap timed out on it",
+                testcase.as_ref().display()
+            );
+            Ok(TestcaseResult::Hang)
+        }
+        AflShowmapResult::Crash => {
+            log::info!(
+                "Test case {} crashes afl-showmap; it is probably interesting",
+                testcase.as_ref().display()
+            );
+            Ok(TestcaseResult::Crash)
+        }
+    }
+}
+
+/// Check if the given test case provides new coverage, crashes, or times out;
+/// copy it to the corresponding location.
+pub fn process_new_testcase(
+    testcase: impl AsRef<Path>,
+    parent: impl AsRef<Path>,
+    tmp_dir: impl AsRef<Path>,
+    afl_config: &AflConfig,
+    state: &mut State,
+) -> Result<TestcaseResult> {
+    log::debug!(
+        "Processing new test case with showmap {}",
+        testcase.as_ref().display()
+    );
+
+    let testcase_bitmap_path = tmp_dir.as_ref().join("testcase_bitmap");
+    let testcase_bb_bitmap_path = tmp_dir.as_ref().join("testcase_bb_bitmap");
+    match afl_config
+        .run_showmap(&testcase_bitmap_path, &testcase_bb_bitmap_path, &testcase)
+        .with_context(|| {
+            format!(
+                "Failed to check whether test case {} is interesting",
+                &testcase.as_ref().display()
+            )
+        })? {
+        AflShowmapResult::Success(testcase_bitmap) => {
+            // we only update coverage, but don't get frontier
+            let interesting = state.current_aflmap.merge(*testcase_bitmap)?;
             if interesting {
                 copy_testcase(&testcase, &mut state.queue, parent).with_context(|| {
                     format!(
@@ -211,6 +262,46 @@ pub fn copy_testcase(
         bail!(
             "Test case {} does not contain a proper ID",
             parent.as_ref().display()
+        );
+    }
+
+    Ok(())
+}
+
+pub fn copy_new_symdict(
+    symdict_file: impl AsRef<Path>,
+    input: impl AsRef<Path>,
+    target_dir: &mut TestcaseDir,
+) -> Result<()> {
+    let orig_name = input
+        .as_ref()
+        .file_name()
+        .expect("The input file does not have a name")
+        .to_string_lossy();
+
+    ensure!(
+        orig_name.starts_with("id:"),
+        "The name of test case {} does not start with an ID",
+        input.as_ref().display()
+    );
+
+    if let Some(orig_id) = orig_name.get(3..9) {
+        let new_name = format!("{:06}_{:06}", &orig_id, target_dir.current_id);
+        let target = target_dir.path.join(new_name);
+        log::debug!("Creating test case {}", target.display());
+        fs::copy(symdict_file.as_ref(), target).with_context(|| {
+            format!(
+                "Failed to copy the test case {} to {}",
+                symdict_file.as_ref().display(),
+                target_dir.path.display()
+            )
+        })?;
+
+        target_dir.current_id += 1;
+    } else {
+        bail!(
+            "Test case {} does not contain a proper ID",
+            input.as_ref().display()
         );
     }
 

@@ -25,7 +25,11 @@ impl AflMap {
     }
 
     /// Load a map from disk.
-    pub fn load(aflmap_path: impl AsRef<Path>, bb_bitmap_path: impl AsRef<Path>) -> Result<AflMap> {
+    pub fn load(
+        aflmap_path: impl AsRef<Path>,
+        bb_bitmap_path: impl AsRef<Path>,
+        map_size: usize,
+    ) -> Result<AflMap> {
         let data = fs::read(&aflmap_path).with_context(|| {
             format!(
                 "Failed to read the AFL bitmap that \
@@ -41,6 +45,9 @@ impl AflMap {
                 bb_bitmap_path.as_ref().display()
             )
         })?);
+
+        assert!(data.len() <= map_size);
+
         Ok(AflMap {
             data: Some(data),
             bb_bitmap: Some(bb_bitmap),
@@ -70,7 +77,7 @@ impl AflMap {
     }
 
     fn merge_bitmap(&mut self, new_data: Option<BitMap>) -> Result<bool> {
-        if !new_data.is_some() {
+        if new_data.is_none() {
             return Ok(false);
         }
         if let Some(ref mut bitmap) = self.bb_bitmap {
@@ -99,14 +106,14 @@ impl AflMap {
     }
 
     pub fn edge_hash(from: &u32, to: &u32) -> usize {
-        return ((from >> 1) ^ to) as usize;
+        ((from >> 1) ^ to) as usize
     }
 
     pub fn is_covered(&self, from: &u32, to: &u32) -> bool {
-        return match self.data {
+        match self.data {
             Some(ref inner) => inner[Self::edge_hash(from, to)] != 0,
             _ => false,
-        };
+        }
     }
 }
 
@@ -128,7 +135,7 @@ pub struct AflConfig {
     use_qemu_mode: bool,
 
     /// The fuzzer instance's queue of test cases.
-    queue: PathBuf,
+    queue_dir: PathBuf,
 
     pub map_size: usize,
 }
@@ -190,7 +197,7 @@ impl AflConfig {
             use_standard_input: !afl_target_command.contains(&"@@".into()),
             use_qemu_mode: afl_command.contains(&"-Q".into()),
             target_command: afl_target_command,
-            queue: fuzzer_output.as_ref().join("queue"),
+            queue_dir: fuzzer_output.as_ref().join("queue"),
             map_size: std::env::var("AFL_MAP_SIZE")
                 .ok()
                 .and_then(|v| v.parse().ok())
@@ -200,24 +207,31 @@ impl AflConfig {
 
     /// Return the most promising unseen test case of this fuzzer.
     pub fn best_new_testcase(&self, seen: &HashSet<PathBuf>) -> Result<Option<PathBuf>> {
-        let best = fs::read_dir(&self.queue)
+        let best = fs::read_dir(&self.queue_dir)
             .with_context(|| {
                 format!(
                     "Failed to open the fuzzer's queue at {}",
-                    self.queue.display()
+                    self.queue_dir.display()
                 )
             })?
             .collect::<io::Result<Vec<_>>>()
             .with_context(|| {
                 format!(
                     "Failed to read the fuzzer's queue at {}",
-                    self.queue.display()
+                    self.queue_dir.display()
                 )
             })?
             .into_iter()
             .map(|entry| entry.path())
             .filter(|path| path.is_file() && !seen.contains(path))
             .max_by_key(|path| TestcaseScore::new(path));
+
+        if best.is_some() {
+            log::info!(
+                "Picking current best new testcase: {}",
+                best.as_ref().unwrap().display()
+            );
+        }
 
         Ok(best)
     }
@@ -269,8 +283,8 @@ impl AflConfig {
             .expect("No exit code available for afl-showmap")
         {
             0 => {
-                let map =
-                    AflMap::load(&testcase_bitmap, &testcase_bb_bitmap).with_context(|| {
+                let map = AflMap::load(&testcase_bitmap, &testcase_bb_bitmap, self.map_size)
+                    .with_context(|| {
                         format!(
                             "Failed to read the AFL bitmap that \
                          afl-showmap should have generated at {}",
@@ -307,13 +321,14 @@ impl EdgeMap {
             edges.insert(parent_id, sons);
         }
 
-        log::debug!("Read {} edges from {}", edges.len(), filename);
+        log::info!("Loaded {} edges from {}", edges.len(), filename);
 
-        Ok(EdgeMap { 0: edges })
+        Ok(EdgeMap(edges))
     }
 }
 
 pub struct BitMap(pub Vec<u64>);
+
 impl BitMap {
     pub fn new(map_size: usize) -> Self {
         assert!(
@@ -321,9 +336,10 @@ impl BitMap {
             "Map size must be a multiple of 64"
         );
         let inner = Vec::with_capacity(map_size / 64);
-        Self { 0: inner }
+        Self(inner)
     }
 
+    // reinterpret a vec<u8> to vec<u64>
     pub fn from_u8(mut from: Vec<u8>) -> Self {
         assert!(
             from.len() % std::mem::size_of::<u64>() == 0,
@@ -337,9 +353,7 @@ impl BitMap {
         std::mem::forget(from);
 
         // 直接重新解释内存布局（无拷贝）
-        Self {
-            0: unsafe { Vec::from_raw_parts(ptr as *mut u64, len, cap) },
-        }
+        Self(unsafe { Vec::from_raw_parts(ptr as *mut u64, len, cap) })
     }
 
     pub fn merge_vec(&mut self, other: Self) -> Result<bool> {
@@ -369,7 +383,8 @@ impl BitMap {
         }
         self.0
             .get(word as usize)
-            .map_or(false, |&x| (x >> bit) & 1 != 0)
+            .map(|&x| (x >> bit) & 1 != 0)
+            .unwrap()
     }
 
     #[inline]

@@ -13,7 +13,7 @@
 // SymCC. If not, see <https://www.gnu.org/licenses/>.
 
 mod afl;
-mod fuzzstate;
+mod state;
 mod stats;
 mod symcc;
 mod testcase;
@@ -25,8 +25,9 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 use afl::AflConfig;
-use fuzzstate::State;
+use state::State;
 use symcc::SymCC;
+use testcase::preprocess_coverage;
 
 const STATS_INTERVAL_SEC: u64 = 60;
 
@@ -41,6 +42,7 @@ struct CLI {
     fuzzer_name: String,
 
     /// The AFL output directory
+    /// should be the top dir, eg: output_dir/fuzzer_name/queue
     #[clap(short = 'o', long = "output")]
     afl_output_dir: PathBuf,
 
@@ -99,8 +101,10 @@ fn main() -> Result<()> {
 
     let symcc = SymCC::new(symcc_dir.clone(), &options.command);
     log::debug!("SymCC configuration: {:?}", &symcc);
+
     let afl_config = AflConfig::load(options.afl_output_dir.join(&options.fuzzer_name))?;
     log::debug!("AFL configuration: {:?}", &afl_config);
+    // coverage state
     let mut state = State::initialize(symcc_dir, options.edge_path)?;
 
     loop {
@@ -112,7 +116,14 @@ fn main() -> Result<()> {
                 log::debug!("Waiting for new test cases...");
                 thread::sleep(Duration::from_secs(5));
             }
-            Some(input) => state.test_input(&input, &symcc, &afl_config)?,
+            Some(input) => {
+                // get frontier
+                let _ = preprocess_coverage(&input, &afl_config, &mut state)?;
+                // run single symcc
+                if state.current_frontier_blocks.len() > 0 {
+                    state.test_input(&input, &symcc, &afl_config)?;
+                }
+            }
         }
 
         if state.last_stats_output.elapsed().as_secs() > STATS_INTERVAL_SEC {
