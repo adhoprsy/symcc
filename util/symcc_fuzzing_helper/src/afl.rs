@@ -249,8 +249,10 @@ impl AflConfig {
         }
 
         afl_show_map
-            .args(&["-t", "5000", "-m", "none", "-b", "-o"])
+            .args(&["-t", "10000", "-m", "none", "-b", "-o"])
             .arg(testcase_bitmap.as_ref())
+            .arg("-B")
+            .arg(testcase_bb_bitmap.as_ref())
             .args(insert_input_file(&self.target_command, &testcase))
             .stdout(Stdio::null())
             .stderr(Stdio::null())
