@@ -1,8 +1,8 @@
-use anyhow::{Error, Result};
-use bytes::{Buf, BufMut, Bytes};
+use anyhow::Result;
+use bytes::{Buf, BufMut, Bytes, BytesMut};
 use std::cmp::Ordering;
 use std::fs::File;
-use std::io::{BufRead, BufReader, Read, Write};
+use std::io::{Read, Write};
 use std::path::Path;
 
 #[derive(Eq, PartialEq, Debug)]
@@ -48,6 +48,7 @@ impl DictWord {
 
         buf.put_u32_le(self.begin);
         buf.put_u32_le(self.end);
+        buf.put_u8(self.data.len() as u8);
         buf.put_slice(&self.data);
 
         Ok(buf)
@@ -79,7 +80,15 @@ impl SymDict {
     pub fn write_to_file(&self, path: impl AsRef<Path>) -> Result<()> {
         let mut file = File::create(path.as_ref())?;
 
+        let mut buf = BytesMut::new();
+        buf.put_u32_le(self.0.len() as u32);
+        file.write_all(&buf)?;
+
         for word in self.0.iter() {
+            if word.end - word.begin >= 255 {
+                continue;
+            }
+
             let buf = word.encode()?;
             file.write_all(&buf)?;
         }
