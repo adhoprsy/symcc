@@ -1,0 +1,110 @@
+[
+{
+  "directory": "/home/thematch/Desktop/mysymcc/build/SymRuntime-prefix/src/SymRuntime-build",
+  "command": "/usr/bin/clang++-15 -DSymRuntime_EXPORTS -I/home/thematch/Desktop/mysymcc/runtime/qsym_backend -I/home/thematch/Desktop/mysymcc/runtime/qsym_backend/.. -isystem /usr/lib/llvm-15/include -isystem /home/thematch/Desktop/mysymcc/runtime/qsym_backend/qsym/qsym/pintool  -std=c++17 -Wredundant-decls -Wcast-align -Wmissing-include-dirs -Wswitch-default -Wextra -Wall -Winvalid-pch -Wredundant-decls -Wformat=2 -Wmissing-format-attribute -Wformat-nonliteral -O2 -g -DNDEBUG -std=gnu++17 -fPIC   -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -o qsym_backend/CMakeFiles/SymRuntime.dir/expr__gen.cpp.o -c /home/thematch/Desktop/mysymcc/build/SymRuntime-prefix/src/SymRuntime-build/qsym_backend/expr__gen.cpp",
+  "file": "/home/thematch/Desktop/mysymcc/build/SymRuntime-prefix/src/SymRuntime-build/qsym_backend/expr__gen.cpp",
+  "output": "qsym_backend/CMakeFiles/SymRuntime.dir/expr__gen.cpp.o"
+},
+{
+  "directory": "/home/thematch/Desktop/mysymcc/build/SymRuntime-prefix/src/SymRuntime-build",
+  "command": "/usr/bin/clang++-15 -DSymRuntime_EXPORTS -I/home/thematch/Desktop/mysymcc/runtime/qsym_backend -I/home/thematch/Desktop/mysymcc/runtime/qsym_backend/.. -isystem /usr/lib/llvm-15/include -isystem /home/thematch/Desktop/mysymcc/runtime/qsym_backend/qsym/qsym/pintool  -std=c++17 -Wredundant-decls -Wcast-align -Wmissing-include-dirs -Wswitch-default -Wextra -Wall -Winvalid-pch -Wredundant-decls -Wformat=2 -Wmissing-format-attribute -Wformat-nonliteral -O2 -g -DNDEBUG -std=gnu++17 -fPIC   -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -o qsym_backend/CMakeFiles/SymRuntime.dir/expr_builder__gen.cpp.o -c /home/thematch/Desktop/mysymcc/build/SymRuntime-prefix/src/SymRuntime-build/qsym_backend/expr_builder__gen.cpp",
+  "file": "/home/thematch/Desktop/mysymcc/build/SymRuntime-prefix/src/SymRuntime-build/qsym_backend/expr_builder__gen.cpp",
+  "output": "qsym_backend/CMakeFiles/SymRuntime.dir/expr_builder__gen.cpp.o"
+},
+{
+  "directory": "/home/thematch/Desktop/mysymcc/build/SymRuntime-prefix/src/SymRuntime-build",
+  "command": "/usr/bin/clang++-15 -DSymRuntime_EXPORTS -I/home/thematch/Desktop/mysymcc/runtime/qsym_backend -I/home/thematch/Desktop/mysymcc/runtime/qsym_backend/.. -isystem /usr/lib/llvm-15/include -isystem /home/thematch/Desktop/mysymcc/runtime/qsym_backend/qsym/qsym/pintool  -std=c++17 -Wredundant-decls -Wcast-align -Wmissing-include-dirs -Wswitch-default -Wextra -Wall -Winvalid-pch -Wredundant-decls -Wformat=2 -Wmissing-format-attribute -Wformat-nonliteral -O2 -g -DNDEBUG -std=gnu++17 -fPIC   -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -o qsym_backend/CMakeFiles/SymRuntime.dir/qsym/qsym/pintool/expr_cache.cpp.o -c /home/thematch/Desktop/mysymcc/runtime/qsym_backend/qsym/qsym/pintool/expr_cache.cpp",
+  "file": "/home/thematch/Desktop/mysymcc/runtime/qsym_backend/qsym/qsym/pintool/expr_cache.cpp",
+  "output": "qsym_backend/CMakeFiles/SymRuntime.dir/qsym/qsym/pintool/expr_cache.cpp.o"
+},
+{
+  "directory": "/home/thematch/Desktop/mysymcc/build/SymRuntime-prefix/src/SymRuntime-build",
+  "command": "/usr/bin/clang++-15 -DSymRuntime_EXPORTS -I/home/thematch/Desktop/mysymcc/runtime/qsym_backend -I/home/thematch/Desktop/mysymcc/runtime/qsym_backend/.. -isystem /usr/lib/llvm-15/include -isystem /home/thematch/Desktop/mysymcc/runtime/qsym_backend/qsym/qsym/pintool  -std=c++17 -Wredundant-decls -Wcast-align -Wmissing-include-dirs -Wswitch-default -Wextra -Wall -Winvalid-pch -Wredundant-decls -Wformat=2 -Wmissing-format-attribute -Wformat-nonliteral -O2 -g -DNDEBUG -std=gnu++17 -fPIC   -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -o qsym_backend/CMakeFiles/SymRuntime.dir/qsym/qsym/pintool/expr_evaluate.cpp.o -c /home/thematch/Desktop/mysymcc/runtime/qsym_backend/qsym/qsym/pintool/expr_evaluate.cpp",
+  "file": "/home/thematch/Desktop/mysymcc/runtime/qsym_backend/qsym/qsym/pintool/expr_evaluate.cpp",
+  "output": "qsym_backend/CMakeFiles/SymRuntime.dir/qsym/qsym/pintool/expr_evaluate.cpp.o"
+},
+{
+  "directory": "/home/thematch/Desktop/mysymcc/build/SymRuntime-prefix/src/SymRuntime-build",
+  "command": "/usr/bin/clang++-15 -DSymRuntime_EXPORTS -I/home/thematch/Desktop/mysymcc/runtime/qsym_backend -I/home/thematch/Desktop/mysymcc/runtime/qsym_backend/.. -isystem /usr/lib/llvm-15/include -isystem /home/thematch/Desktop/mysymcc/runtime/qsym_backend/qsym/qsym/pintool  -std=c++17 -Wredundant-decls -Wcast-align -Wmissing-include-dirs -Wswitch-default -Wextra -Wall -Winvalid-pch -Wredundant-decls -Wformat=2 -Wmissing-format-attribute -Wformat-nonliteral -O2 -g -DNDEBUG -std=gnu++17 -fPIC   -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -o qsym_backend/CMakeFiles/SymRuntime.dir/qsym/qsym/pintool/solver.cpp.o -c /home/thematch/Desktop/mysymcc/runtime/qsym_backend/qsym/qsym/pintool/solver.cpp",
+  "file": "/home/thematch/Desktop/mysymcc/runtime/qsym_backend/qsym/qsym/pintool/solver.cpp",
+  "output": "qsym_backend/CMakeFiles/SymRuntime.dir/qsym/qsym/pintool/solver.cpp.o"
+},
+{
+  "directory": "/home/thematch/Desktop/mysymcc/build/SymRuntime-prefix/src/SymRuntime-build",
+  "command": "/usr/bin/clang++-15 -DSymRuntime_EXPORTS -I/home/thematch/Desktop/mysymcc/runtime/qsym_backend -I/home/thematch/Desktop/mysymcc/runtime/qsym_backend/.. -isystem /usr/lib/llvm-15/include -isystem /home/thematch/Desktop/mysymcc/runtime/qsym_backend/qsym/qsym/pintool  -std=c++17 -Wredundant-decls -Wcast-align -Wmissing-include-dirs -Wswitch-default -Wextra -Wall -Winvalid-pch -Wredundant-decls -Wformat=2 -Wmissing-format-attribute -Wformat-nonliteral -O2 -g -DNDEBUG -std=gnu++17 -fPIC   -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -o qsym_backend/CMakeFiles/SymRuntime.dir/qsym/qsym/pintool/dependency.cpp.o -c /home/thematch/Desktop/mysymcc/runtime/qsym_backend/qsym/qsym/pintool/dependency.cpp",
+  "file": "/home/thematch/Desktop/mysymcc/runtime/qsym_backend/qsym/qsym/pintool/dependency.cpp",
+  "output": "qsym_backend/CMakeFiles/SymRuntime.dir/qsym/qsym/pintool/dependency.cpp.o"
+},
+{
+  "directory": "/home/thematch/Desktop/mysymcc/build/SymRuntime-prefix/src/SymRuntime-build",
+  "command": "/usr/bin/clang++-15 -DSymRuntime_EXPORTS -I/home/thematch/Desktop/mysymcc/runtime/qsym_backend -I/home/thematch/Desktop/mysymcc/runtime/qsym_backend/.. -isystem /usr/lib/llvm-15/include -isystem /home/thematch/Desktop/mysymcc/runtime/qsym_backend/qsym/qsym/pintool  -std=c++17 -Wredundant-decls -Wcast-align -Wmissing-include-dirs -Wswitch-default -Wextra -Wall -Winvalid-pch -Wredundant-decls -Wformat=2 -Wmissing-format-attribute -Wformat-nonliteral -O2 -g -DNDEBUG -std=gnu++17 -fPIC   -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -o qsym_backend/CMakeFiles/SymRuntime.dir/qsym/qsym/pintool/logging.cpp.o -c /home/thematch/Desktop/mysymcc/runtime/qsym_backend/qsym/qsym/pintool/logging.cpp",
+  "file": "/home/thematch/Desktop/mysymcc/runtime/qsym_backend/qsym/qsym/pintool/logging.cpp",
+  "output": "qsym_backend/CMakeFiles/SymRuntime.dir/qsym/qsym/pintool/logging.cpp.o"
+},
+{
+  "directory": "/home/thematch/Desktop/mysymcc/build/SymRuntime-prefix/src/SymRuntime-build",
+  "command": "/usr/bin/clang++-15 -DSymRuntime_EXPORTS -I/home/thematch/Desktop/mysymcc/runtime/qsym_backend -I/home/thematch/Desktop/mysymcc/runtime/qsym_backend/.. -isystem /usr/lib/llvm-15/include -isystem /home/thematch/Desktop/mysymcc/runtime/qsym_backend/qsym/qsym/pintool  -std=c++17 -Wredundant-decls -Wcast-align -Wmissing-include-dirs -Wswitch-default -Wextra -Wall -Winvalid-pch -Wredundant-decls -Wformat=2 -Wmissing-format-attribute -Wformat-nonliteral -O2 -g -DNDEBUG -std=gnu++17 -fPIC   -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -o qsym_backend/CMakeFiles/SymRuntime.dir/qsym/qsym/pintool/afl_trace_map.cpp.o -c /home/thematch/Desktop/mysymcc/runtime/qsym_backend/qsym/qsym/pintool/afl_trace_map.cpp",
+  "file": "/home/thematch/Desktop/mysymcc/runtime/qsym_backend/qsym/qsym/pintool/afl_trace_map.cpp",
+  "output": "qsym_backend/CMakeFiles/SymRuntime.dir/qsym/qsym/pintool/afl_trace_map.cpp.o"
+},
+{
+  "directory": "/home/thematch/Desktop/mysymcc/build/SymRuntime-prefix/src/SymRuntime-build",
+  "command": "/usr/bin/clang++-15 -DSymRuntime_EXPORTS -I/home/thematch/Desktop/mysymcc/runtime/qsym_backend -I/home/thematch/Desktop/mysymcc/runtime/qsym_backend/.. -isystem /usr/lib/llvm-15/include -isystem /home/thematch/Desktop/mysymcc/runtime/qsym_backend/qsym/qsym/pintool  -std=c++17 -Wredundant-decls -Wcast-align -Wmissing-include-dirs -Wswitch-default -Wextra -Wall -Winvalid-pch -Wredundant-decls -Wformat=2 -Wmissing-format-attribute -Wformat-nonliteral -O2 -g -DNDEBUG -std=gnu++17 -fPIC   -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -o qsym_backend/CMakeFiles/SymRuntime.dir/qsym/qsym/pintool/allocation.cpp.o -c /home/thematch/Desktop/mysymcc/runtime/qsym_backend/qsym/qsym/pintool/allocation.cpp",
+  "file": "/home/thematch/Desktop/mysymcc/runtime/qsym_backend/qsym/qsym/pintool/allocation.cpp",
+  "output": "qsym_backend/CMakeFiles/SymRuntime.dir/qsym/qsym/pintool/allocation.cpp.o"
+},
+{
+  "directory": "/home/thematch/Desktop/mysymcc/build/SymRuntime-prefix/src/SymRuntime-build",
+  "command": "/usr/bin/clang++-15 -DSymRuntime_EXPORTS -I/home/thematch/Desktop/mysymcc/runtime/qsym_backend -I/home/thematch/Desktop/mysymcc/runtime/qsym_backend/.. -isystem /usr/lib/llvm-15/include -isystem /home/thematch/Desktop/mysymcc/runtime/qsym_backend/qsym/qsym/pintool  -std=c++17 -Wredundant-decls -Wcast-align -Wmissing-include-dirs -Wswitch-default -Wextra -Wall -Winvalid-pch -Wredundant-decls -Wformat=2 -Wmissing-format-attribute -Wformat-nonliteral -O2 -g -DNDEBUG -std=gnu++17 -fPIC   -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -o qsym_backend/CMakeFiles/SymRuntime.dir/qsym/qsym/pintool/call_stack_manager.cpp.o -c /home/thematch/Desktop/mysymcc/runtime/qsym_backend/qsym/qsym/pintool/call_stack_manager.cpp",
+  "file": "/home/thematch/Desktop/mysymcc/runtime/qsym_backend/qsym/qsym/pintool/call_stack_manager.cpp",
+  "output": "qsym_backend/CMakeFiles/SymRuntime.dir/qsym/qsym/pintool/call_stack_manager.cpp.o"
+},
+{
+  "directory": "/home/thematch/Desktop/mysymcc/build/SymRuntime-prefix/src/SymRuntime-build",
+  "command": "/usr/bin/clang++-15 -DSymRuntime_EXPORTS -I/home/thematch/Desktop/mysymcc/runtime/qsym_backend -I/home/thematch/Desktop/mysymcc/runtime/qsym_backend/.. -isystem /usr/lib/llvm-15/include -isystem /home/thematch/Desktop/mysymcc/runtime/qsym_backend/qsym/qsym/pintool  -std=c++17 -Wredundant-decls -Wcast-align -Wmissing-include-dirs -Wswitch-default -Wextra -Wall -Winvalid-pch -Wredundant-decls -Wformat=2 -Wmissing-format-attribute -Wformat-nonliteral -O2 -g -DNDEBUG -std=gnu++17 -fPIC   -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -o qsym_backend/CMakeFiles/SymRuntime.dir/qsym/qsym/pintool/third_party/llvm/range.cpp.o -c /home/thematch/Desktop/mysymcc/runtime/qsym_backend/qsym/qsym/pintool/third_party/llvm/range.cpp",
+  "file": "/home/thematch/Desktop/mysymcc/runtime/qsym_backend/qsym/qsym/pintool/third_party/llvm/range.cpp",
+  "output": "qsym_backend/CMakeFiles/SymRuntime.dir/qsym/qsym/pintool/third_party/llvm/range.cpp.o"
+},
+{
+  "directory": "/home/thematch/Desktop/mysymcc/build/SymRuntime-prefix/src/SymRuntime-build",
+  "command": "/usr/bin/clang++-15 -DSymRuntime_EXPORTS -I/home/thematch/Desktop/mysymcc/runtime/qsym_backend -I/home/thematch/Desktop/mysymcc/runtime/qsym_backend/.. -isystem /usr/lib/llvm-15/include -isystem /home/thematch/Desktop/mysymcc/runtime/qsym_backend/qsym/qsym/pintool  -std=c++17 -Wredundant-decls -Wcast-align -Wmissing-include-dirs -Wswitch-default -Wextra -Wall -Winvalid-pch -Wredundant-decls -Wformat=2 -Wmissing-format-attribute -Wformat-nonliteral -O2 -g -DNDEBUG -std=gnu++17 -fPIC   -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -o qsym_backend/CMakeFiles/SymRuntime.dir/qsym/qsym/pintool/third_party/xxhash/xxhash.cpp.o -c /home/thematch/Desktop/mysymcc/runtime/qsym_backend/qsym/qsym/pintool/third_party/xxhash/xxhash.cpp",
+  "file": "/home/thematch/Desktop/mysymcc/runtime/qsym_backend/qsym/qsym/pintool/third_party/xxhash/xxhash.cpp",
+  "output": "qsym_backend/CMakeFiles/SymRuntime.dir/qsym/qsym/pintool/third_party/xxhash/xxhash.cpp.o"
+},
+{
+  "directory": "/home/thematch/Desktop/mysymcc/build/SymRuntime-prefix/src/SymRuntime-build",
+  "command": "/usr/bin/clang++-15 -DSymRuntime_EXPORTS -I/home/thematch/Desktop/mysymcc/runtime/qsym_backend -I/home/thematch/Desktop/mysymcc/runtime/qsym_backend/.. -isystem /usr/lib/llvm-15/include -isystem /home/thematch/Desktop/mysymcc/runtime/qsym_backend/qsym/qsym/pintool  -std=c++17 -Wredundant-decls -Wcast-align -Wmissing-include-dirs -Wswitch-default -Wextra -Wall -Winvalid-pch -Wredundant-decls -Wformat=2 -Wmissing-format-attribute -Wformat-nonliteral -O2 -g -DNDEBUG -std=gnu++17 -fPIC   -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -o qsym_backend/CMakeFiles/SymRuntime.dir/__/Config.cpp.o -c /home/thematch/Desktop/mysymcc/runtime/Config.cpp",
+  "file": "/home/thematch/Desktop/mysymcc/runtime/Config.cpp",
+  "output": "qsym_backend/CMakeFiles/SymRuntime.dir/__/Config.cpp.o"
+},
+{
+  "directory": "/home/thematch/Desktop/mysymcc/build/SymRuntime-prefix/src/SymRuntime-build",
+  "command": "/usr/bin/clang++-15 -DSymRuntime_EXPORTS -I/home/thematch/Desktop/mysymcc/runtime/qsym_backend -I/home/thematch/Desktop/mysymcc/runtime/qsym_backend/.. -isystem /usr/lib/llvm-15/include -isystem /home/thematch/Desktop/mysymcc/runtime/qsym_backend/qsym/qsym/pintool  -std=c++17 -Wredundant-decls -Wcast-align -Wmissing-include-dirs -Wswitch-default -Wextra -Wall -Winvalid-pch -Wredundant-decls -Wformat=2 -Wmissing-format-attribute -Wformat-nonliteral -O2 -g -DNDEBUG -std=gnu++17 -fPIC   -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -o qsym_backend/CMakeFiles/SymRuntime.dir/__/RuntimeCommon.cpp.o -c /home/thematch/Desktop/mysymcc/runtime/RuntimeCommon.cpp",
+  "file": "/home/thematch/Desktop/mysymcc/runtime/RuntimeCommon.cpp",
+  "output": "qsym_backend/CMakeFiles/SymRuntime.dir/__/RuntimeCommon.cpp.o"
+},
+{
+  "directory": "/home/thematch/Desktop/mysymcc/build/SymRuntime-prefix/src/SymRuntime-build",
+  "command": "/usr/bin/clang++-15 -DSymRuntime_EXPORTS -I/home/thematch/Desktop/mysymcc/runtime/qsym_backend -I/home/thematch/Desktop/mysymcc/runtime/qsym_backend/.. -isystem /usr/lib/llvm-15/include -isystem /home/thematch/Desktop/mysymcc/runtime/qsym_backend/qsym/qsym/pintool  -std=c++17 -Wredundant-decls -Wcast-align -Wmissing-include-dirs -Wswitch-default -Wextra -Wall -Winvalid-pch -Wredundant-decls -Wformat=2 -Wmissing-format-attribute -Wformat-nonliteral -O2 -g -DNDEBUG -std=gnu++17 -fPIC   -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -o qsym_backend/CMakeFiles/SymRuntime.dir/__/LibcWrappers.cpp.o -c /home/thematch/Desktop/mysymcc/runtime/LibcWrappers.cpp",
+  "file": "/home/thematch/Desktop/mysymcc/runtime/LibcWrappers.cpp",
+  "output": "qsym_backend/CMakeFiles/SymRuntime.dir/__/LibcWrappers.cpp.o"
+},
+{
+  "directory": "/home/thematch/Desktop/mysymcc/build/SymRuntime-prefix/src/SymRuntime-build",
+  "command": "/usr/bin/clang++-15 -DSymRuntime_EXPORTS -I/home/thematch/Desktop/mysymcc/runtime/qsym_backend -I/home/thematch/Desktop/mysymcc/runtime/qsym_backend/.. -isystem /usr/lib/llvm-15/include -isystem /home/thematch/Desktop/mysymcc/runtime/qsym_backend/qsym/qsym/pintool  -std=c++17 -Wredundant-decls -Wcast-align -Wmissing-include-dirs -Wswitch-default -Wextra -Wall -Winvalid-pch -Wredundant-decls -Wformat=2 -Wmissing-format-attribute -Wformat-nonliteral -O2 -g -DNDEBUG -std=gnu++17 -fPIC   -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -o qsym_backend/CMakeFiles/SymRuntime.dir/__/Shadow.cpp.o -c /home/thematch/Desktop/mysymcc/runtime/Shadow.cpp",
+  "file": "/home/thematch/Desktop/mysymcc/runtime/Shadow.cpp",
+  "output": "qsym_backend/CMakeFiles/SymRuntime.dir/__/Shadow.cpp.o"
+},
+{
+  "directory": "/home/thematch/Desktop/mysymcc/build/SymRuntime-prefix/src/SymRuntime-build",
+  "command": "/usr/bin/clang++-15 -DSymRuntime_EXPORTS -I/home/thematch/Desktop/mysymcc/runtime/qsym_backend -I/home/thematch/Desktop/mysymcc/runtime/qsym_backend/.. -isystem /usr/lib/llvm-15/include -isystem /home/thematch/Desktop/mysymcc/runtime/qsym_backend/qsym/qsym/pintool  -std=c++17 -Wredundant-decls -Wcast-align -Wmissing-include-dirs -Wswitch-default -Wextra -Wall -Winvalid-pch -Wredundant-decls -Wformat=2 -Wmissing-format-attribute -Wformat-nonliteral -O2 -g -DNDEBUG -std=gnu++17 -fPIC   -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -o qsym_backend/CMakeFiles/SymRuntime.dir/__/GarbageCollection.cpp.o -c /home/thematch/Desktop/mysymcc/runtime/GarbageCollection.cpp",
+  "file": "/home/thematch/Desktop/mysymcc/runtime/GarbageCollection.cpp",
+  "output": "qsym_backend/CMakeFiles/SymRuntime.dir/__/GarbageCollection.cpp.o"
+},
+{
+  "directory": "/home/thematch/Desktop/mysymcc/build/SymRuntime-prefix/src/SymRuntime-build",
+  "command": "/usr/bin/clang++-15 -DSymRuntime_EXPORTS -I/home/thematch/Desktop/mysymcc/runtime/qsym_backend -I/home/thematch/Desktop/mysymcc/runtime/qsym_backend/.. -isystem /usr/lib/llvm-15/include -isystem /home/thematch/Desktop/mysymcc/runtime/qsym_backend/qsym/qsym/pintool  -std=c++17 -Wredundant-decls -Wcast-align -Wmissing-include-dirs -Wswitch-default -Wextra -Wall -Winvalid-pch -Wredundant-decls -Wformat=2 -Wmissing-format-attribute -Wformat-nonliteral -O2 -g -DNDEBUG -std=gnu++17 -fPIC   -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -o qsym_backend/CMakeFiles/SymRuntime.dir/Runtime.cpp.o -c /home/thematch/Desktop/mysymcc/runtime/qsym_backend/Runtime.cpp",
+  "file": "/home/thematch/Desktop/mysymcc/runtime/qsym_backend/Runtime.cpp",
+  "output": "qsym_backend/CMakeFiles/SymRuntime.dir/Runtime.cpp.o"
+}
+]

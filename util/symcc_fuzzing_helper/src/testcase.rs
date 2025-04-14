@@ -6,6 +6,7 @@ use tempfile::tempdir;
 
 use crate::afl::{AflConfig, AflShowmapResult};
 use crate::state::State;
+use crate::symdict::SymDict;
 
 /// Replace the first '@@' in the given command line with the input file.
 pub fn insert_input_file<S: AsRef<OsStr>, P: AsRef<Path>>(
@@ -289,14 +290,21 @@ pub fn copy_new_symdict(
         let new_name = format!("{:06}_{:06}", &orig_id, target_dir.current_id);
         let target = target_dir.path.join(new_name);
         log::debug!("Creating test case {}", target.display());
-        fs::copy(symdict_file.as_ref(), target).with_context(|| {
+
+        SymDict::trim_symdict(&symdict_file, &target).with_context(|| {
             format!(
-                "Failed to copy the test case {} to {}",
+                "Failed to trim the symdict {} and save to {}",
                 symdict_file.as_ref().display(),
                 target_dir.path.display()
             )
         })?;
-
+        // fs::copy(symdict_file.as_ref(), target).with_context(|| {
+        //     format!(
+        //         "Failed to copy the test case {} to {}",
+        //         symdict_file.as_ref().display(),
+        //         target_dir.path.display()
+        //     )
+        // })?;
         target_dir.current_id += 1;
     } else {
         bail!(

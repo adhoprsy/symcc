@@ -47,6 +47,10 @@ void loadConfig() {
   if (outputDir != nullptr)
     g_config.outputDir = outputDir;
 
+  auto *symdictDIr = getenv("SYMCC_SYMDICT_DIR");
+  if (symdictDIr != nullptr)
+    g_config.symdictDir = symdictDIr;
+
   auto *inputFile = getenv("SYMCC_INPUT_FILE");
   if (inputFile != nullptr)
     g_config.input = FileInput{inputFile};

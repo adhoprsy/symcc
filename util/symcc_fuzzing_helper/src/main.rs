@@ -16,6 +16,7 @@ mod afl;
 mod state;
 mod stats;
 mod symcc;
+mod symdict;
 mod testcase;
 
 use anyhow::{Context, Result};

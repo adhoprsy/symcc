@@ -43,6 +43,8 @@ struct Config {
   /// The directory for storing new outputs.
   std::string outputDir = "/tmp/output";
 
+  std::string symdictDir = "/tmp/symdict";
+
   /// The file to log constraint solving information to.
   std::string logFile = "";
 

@@ -124,8 +124,10 @@ class EnhancedQsymSolver : public qsym::Solver {
 
 public:
   EnhancedQsymSolver()
-      : qsym::Solver("/dev/null", g_config.outputDir, g_config.aflCoverageMap) {
-  }
+      : qsym::Solver(std::holds_alternative<FileInput>(g_config.input) ? std::get<FileInput>(g_config.input).fileName: "/dev/null",
+                     g_config.outputDir,
+                     g_config.symdictDir,
+                     g_config.aflCoverageMap) {}
 
   void pushInputByte(size_t offset, uint8_t value) {
     if (inputs_.size() <= offset)
@@ -179,6 +181,14 @@ void _sym_initialize(void) {
   // Check the output directory
   if (!fs::exists(g_config.outputDir) ||
       !fs::is_directory(g_config.outputDir)) {
+    std::cerr << "Error: the output directory " << g_config.outputDir
+              << " (configurable via SYMCC_OUTPUT_DIR) does not exist."
+              << std::endl;
+    exit(-1);
+  }
+
+  if (!fs::exists(g_config.symdictDir) ||
+      !fs::is_directory(g_config.symdictDir)) {
     std::cerr << "Error: the output directory " << g_config.outputDir
               << " (configurable via SYMCC_OUTPUT_DIR) does not exist."
               << std::endl;
@@ -314,11 +324,11 @@ void _sym_push_path_constraint(SymExpr constraint, int taken,
                                uintptr_t site_id) {
   if (constraint == nullptr)
     return;
-  
-  std::cerr << "\n...expression: ";
+
+  // std::cerr << "\n...expression: ";
   auto expression = allocatedExpressions.at(constraint);
-  expression->print(std::cerr, 0);
-  std::cerr << "\n";
+  // expression->print(std::cerr, 0);
+  // std::cerr << "\n";
   g_solver->addJcc(expression, taken != 0, site_id);
 }
 
