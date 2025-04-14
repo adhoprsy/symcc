@@ -127,7 +127,8 @@ public:
       : qsym::Solver(std::holds_alternative<FileInput>(g_config.input) ? std::get<FileInput>(g_config.input).fileName: "/dev/null",
                      g_config.outputDir,
                      g_config.symdictDir,
-                     g_config.aflCoverageMap) {}
+                     g_config.aflCoverageMap,
+                     g_config.enable_dict) {}
 
   void pushInputByte(size_t offset, uint8_t value) {
     if (inputs_.size() <= offset)

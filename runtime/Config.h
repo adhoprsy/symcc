@@ -45,6 +45,8 @@ struct Config {
 
   std::string symdictDir = "/tmp/symdict";
 
+  bool enable_dict = true;
+
   /// The file to log constraint solving information to.
   std::string logFile = "";
 

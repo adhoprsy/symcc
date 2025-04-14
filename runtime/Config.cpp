@@ -50,6 +50,12 @@ void loadConfig() {
   auto *symdictDIr = getenv("SYMCC_SYMDICT_DIR");
   if (symdictDIr != nullptr)
     g_config.symdictDir = symdictDIr;
+  else
+    g_config.enable_dict = false;
+
+  auto *enableDict = getenv("SYMCC_ENABLE_SYMDICT");
+  if (enableDict == nullptr || !checkFlagString(enableDict))
+    g_config.enable_dict = false;
 
   auto *inputFile = getenv("SYMCC_INPUT_FILE");
   if (inputFile != nullptr)
