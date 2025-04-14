@@ -1,9 +1,8 @@
-use crate::afl::AflMap;
-use crate::symcc::{self, SymCC};
+use crate::symcc::{self};
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use std::io::Write;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 /// Execution statistics.
 #[derive(Debug, Default)]
 pub struct Stats {

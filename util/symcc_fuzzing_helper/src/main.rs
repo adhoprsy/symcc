@@ -21,7 +21,7 @@ mod testcase;
 
 use anyhow::{Context, Result};
 use clap::{self, Parser};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::thread;
 use std::time::{Duration, Instant};
 
