@@ -77,6 +77,7 @@ PassPluginLibraryInfo getSymbolizePluginInfo() {
             // module passes at the start of the vectorizer, hence the split.)
             PB.registerPipelineStartEPCallback(
                 [](ModulePassManager &PM, OptimizationLevel) {
+                  PM.addPass(UniqueID());
                   PM.addPass(SymbolizePass());
                 });
             PB.registerVectorizerStartEPCallback(

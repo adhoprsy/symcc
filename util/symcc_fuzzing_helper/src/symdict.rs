@@ -59,7 +59,7 @@ pub struct SymDict(pub Vec<DictWord>);
 
 impl SymDict {
     pub fn read_from_file(path: impl AsRef<Path>) -> Result<Self> {
-        let mut file = File::open(path.as_ref()).expect("failed to open file");
+        let mut file = File::open(path.as_ref()).expect("failed to open symdict file");
         let mut buf = Vec::new();
         file.read_to_end(&mut buf)?;
         let mut reader = bytes::Bytes::from(buf);

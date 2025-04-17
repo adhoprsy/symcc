@@ -23,6 +23,25 @@
 #include <llvm/IR/PassManager.h>
 #endif
 
+#include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/Value.h"
+#include "llvm/IR/Instruction.h"
+#include "llvm/IR/LLVMContext.h"
+#include "llvm/IR/Metadata.h"
+#include "llvm/IR/Constant.h"
+
+#if LLVM_VERSION_MAJOR >= 14
+  #include "llvm/Passes/PassPlugin.h"
+  #include "llvm/Passes/PassBuilder.h"
+  #include "llvm/Passes/OptimizationLevel.h"
+#else
+  #include "llvm/IR/LegacyPassManager.h"
+#endif
+#include "llvm/IR/Module.h"
+#include "llvm/Support/Debug.h"
+#include "llvm/Support/raw_ostream.h"
+#include "llvm/Transforms/IPO/PassManagerBuilder.h"
+
 class SymbolizeLegacyPass : public llvm::FunctionPass {
 public:
   static char ID;
@@ -41,6 +60,12 @@ public:
                               llvm::FunctionAnalysisManager &);
   llvm::PreservedAnalyses run(llvm::Module &M, llvm::ModuleAnalysisManager &);
 
+  static bool isRequired() { return true; }
+};
+
+class UniqueID : public llvm::PassInfoMixin<UniqueID> {
+  public:
+  llvm::PreservedAnalyses run(llvm::Module &M, llvm::ModuleAnalysisManager &AM);
   static bool isRequired() { return true; }
 };
 

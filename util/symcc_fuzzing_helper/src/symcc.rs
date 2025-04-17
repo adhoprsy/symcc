@@ -134,7 +134,9 @@ impl SymCC {
             .env("SYMCC_ENABLE_LINEARIZATION", "1")
             .env("SYMCC_AFL_COVERAGE_MAP", &self.bitmap)
             .env("SYMCC_OUTPUT_DIR", output_dir.as_ref())
+            .env("SYMCC_ENABLE_SYMDICT", "1")
             .env("SYMCC_SYMDICT_DIR", symdict_dir.as_ref())
+            .env("SYMCC_ENABLE_DIRECT", "1")
             .env("SYMCC_DIRECT_TARGETS", frontiers_string)
             .stdout(Stdio::null())
             .stderr(Stdio::piped()); // capture SMT logs

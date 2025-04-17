@@ -19,11 +19,13 @@
 #include <llvm/CodeGen/TargetLowering.h>
 #include <llvm/CodeGen/TargetSubtargetInfo.h>
 #include <llvm/IR/InstIterator.h>
+#include <llvm/IR/IntrinsicInst.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Verifier.h>
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/Target/TargetOptions.h>
 #include <llvm/Transforms/Utils/ModuleUtils.h>
+#include <filesystem>
 
 #if LLVM_VERSION_MAJOR < 14
 #include <llvm/Support/TargetRegistry.h>
@@ -44,6 +46,77 @@ using namespace llvm;
 #else
 #define DEBUG(X) ((void)0)
 #endif
+
+#define MAP_SIZE (1<<16)
+
+uint32_t read_id_from_metadata(MDNode* MD) {
+  if (MD && MD->getNumOperands() >= 1) {
+    if (ConstantInt *CI = mdconst::dyn_extract<ConstantInt>(MD->getOperand(0))) {
+      uint64_t id = CI->getZExtValue();
+      return id;
+    }
+  }
+  return 0;
+}
+
+std::string get_function_filename(const Function &F) {
+    if (DISubprogram *SP = F.getSubprogram()) {
+        if (DIFile *File = SP->getFile()) {
+          auto path = std::filesystem::path(File->getFilename().str());
+          return path.filename().string();
+        }
+    }
+    return "";
+}
+
+std::string generate_bb_hash_single(const BasicBlock* BB) {
+  std::string BBContent;
+  raw_string_ostream os(BBContent);
+  for (const auto& I : *BB) {
+    if (auto* intrinsin = llvm::dyn_cast<llvm::IntrinsicInst>(&I)) {
+      continue;
+    }
+    os << I.getOpcode();
+    for (Value* op: I.operands())
+      if (op->getType()) {
+        op->getType()->print(os);
+        if (op->hasName()) os << op->getName();
+        else if (isa<Constant>(op)) os << *op;
+        os << "|";
+      }
+  }
+  // function name
+  os << BB->getParent()->getName();
+  // file name
+  os << get_function_filename(*BB->getParent());
+
+  return os.str();
+}
+
+uint32_t generate_bb_hash(const BasicBlock* BB) {
+  std::string BBContent;
+  raw_string_ostream os(BBContent);
+
+  os << generate_bb_hash_single(BB) << "$$";
+  if(!pred_empty(BB)) {
+    for (const BasicBlock* pred: predecessors(BB)) {
+      os << generate_bb_hash_single(pred) << "$$";
+    }
+  }
+
+  auto* term = BB->getTerminator();
+  if (term->getNumSuccessors() > 0) {
+    for (const BasicBlock* succ: successors(BB)) {
+      os << generate_bb_hash_single(succ) << "$$";
+    }
+  }
+
+  // errs() << "=======================\n";
+  // errs() << os.str() << "\n";
+  // errs() << "=======================\n";
+  std::hash<std::string> hasher;
+  return static_cast<uint32_t>(hasher(os.str()) % MAP_SIZE);
+}
 
 char SymbolizeLegacyPass::ID = 0;
 
@@ -206,6 +279,91 @@ bool instrumentFunction(Function &F) {
   return true;
 }
 
+PreservedAnalyses uniqueidmodule(Module &M) {
+  int inst_blocks = 0;
+
+  for (auto &F : M)
+    for (auto &BB : F) {
+      Instruction* terminator = BB.getTerminator();
+      if (!terminator) continue;
+
+      // branch instructions
+      const BranchInst* br = dyn_cast<BranchInst>(terminator);
+      if (br && br->isConditional()) {
+
+        auto IP = BB.getFirstInsertionPt();
+        IRBuilder<> IRB(&(*IP));
+
+        if (!terminator->hasMetadata(M.getMDKindID("basicblock.id"))) {
+          // uint64_t raw_id = distr(gen);
+          uint32_t raw_id = generate_bb_hash(&BB);
+          MDNode* node =  MDNode::get(BB.getContext(), ConstantAsMetadata::get(ConstantInt::get(Type::getInt32Ty(BB.getContext()), raw_id)));
+          terminator->setMetadata(M.getMDKindID("basicblock.id"), node);
+          inst_blocks++;
+        }
+
+        // uint32_t parent_id =read_id_from_metadata(terminator->getMetadata(M.getMDKindID("basicblock.id")));
+        // errs() << "-----------------------------------------------\n";
+        // errs() << BB << "\n";
+        // errs() << "bb_id: " <<BB.getName() << " | unique_id: " <<parent_id << " | " <<*terminator << "\n";
+        // assign id for its child
+        for (BasicBlock* succ: successors(&BB)) {
+          Instruction* term = succ->getTerminator();
+          if (!term) continue;
+          auto IP = succ->getFirstInsertionPt();
+          IRBuilder<> IRB(&(*IP));
+          if (!term->hasMetadata(M.getMDKindID("basicblock.id"))) {
+            // uint64_t raw_id = distr(gen);
+            uint32_t raw_id = generate_bb_hash(succ);
+            MDNode* node =  MDNode::get(BB.getContext(), ConstantAsMetadata::get(ConstantInt::get(Type::getInt32Ty(BB.getContext()), raw_id)));
+            term->setMetadata(M.getMDKindID("basicblock.id"), node);
+            inst_blocks++;
+          }
+          // uint32_t child_id = read_id_from_metadata(term->getMetadata(M.getMDKindID("basicblock.id")));
+
+          // errs() << "child: " << *succ << "\n";
+          // errs() << "child : " <<child_id << " | " <<*term << "\n\n";
+
+        }
+      }
+
+      // switch instructions
+      const SwitchInst* sw = dyn_cast<SwitchInst>(terminator);
+      if (sw) {
+        auto IP = BB.getFirstInsertionPt();
+        IRBuilder<> IRB(&(*IP));
+
+        if (!terminator->hasMetadata(M.getMDKindID("basicblock.id"))) {
+          // uint64_t raw_id = distr(gen);
+          uint32_t raw_id = generate_bb_hash(&BB);
+          MDNode* node =  MDNode::get(BB.getContext(), ConstantAsMetadata::get(ConstantInt::get(Type::getInt32Ty(BB.getContext()), raw_id)));
+          terminator->setMetadata(M.getMDKindID("basicblock.id"), node);
+          inst_blocks++;
+        }
+        // uint64_t parent_id =read_id_from_metadata(terminator->getMetadata(M.getMDKindID("basicblock.id")));
+        // assign id for its child
+        for (BasicBlock* succ: successors(&BB)) {
+          Instruction* term = succ->getTerminator();
+          if (!term) continue;
+          auto IP = succ->getFirstInsertionPt();
+          IRBuilder<> IRB(&(*IP));
+          if (!term->hasMetadata(M.getMDKindID("basicblock.id"))) {
+            // uint64_t raw_id = distr(gen);
+            uint32_t raw_id = generate_bb_hash(succ);
+            // childs_map[parent_id].insert(raw_id);
+            MDNode* node =  MDNode::get(BB.getContext(), ConstantAsMetadata::get(ConstantInt::get(Type::getInt32Ty(BB.getContext()), raw_id)));
+            term->setMetadata(M.getMDKindID("basicblock.id"), node);
+            inst_blocks++;
+          }
+        }
+      }
+    }
+
+  errs() << "Unique ID Pass instrumented blocks : " << inst_blocks << "\n";
+
+  return PreservedAnalyses();
+}
+
 } // namespace
 
 bool SymbolizeLegacyPass::doInitialization(Module &M) {
@@ -226,6 +384,10 @@ PreservedAnalyses SymbolizePass::run(Function &F, FunctionAnalysisManager &) {
 PreservedAnalyses SymbolizePass::run(Module &M, ModuleAnalysisManager &) {
   return instrumentModule(M) ? PreservedAnalyses::none()
                              : PreservedAnalyses::all();
+}
+
+PreservedAnalyses UniqueID::run(Module &M, ModuleAnalysisManager &) {
+  return uniqueidmodule(M);
 }
 
 #endif

@@ -306,18 +306,24 @@ pub struct EdgeMap(pub HashMap<u32, HashSet<u32>>);
 
 impl EdgeMap {
     pub fn read_from_file(filename: &str) -> Result<EdgeMap> {
-        let f = File::open(filename)?;
-        let reader = BufReader::new(f);
+        let mut file = File::open(filename).expect("failed to open edge file");
+        let mut buf = Vec::new();
+        file.read_to_end(&mut buf)?;
+        let mut reader = bytes::Bytes::from(buf);
 
         let mut edges = HashMap::new();
 
-        for line in reader.lines() {
+        if !reader.has_remaining() {
+            return Ok(EdgeMap(edges));
+        }
+
+        let line_num = reader.get_u32_le();
+        for _ in 0..line_num {
             let mut sons = HashSet::new();
-            let mut buf = Bytes::from(line?.into_bytes());
-            let parent_id = buf.get_u32();
-            let num_son = buf.get_u32();
+            let parent_id = reader.get_u32_le();
+            let num_son = reader.get_u8();
             for _ in 0..num_son {
-                let son_id = buf.get_u32();
+                let son_id = reader.get_u32_le();
                 sons.insert(son_id);
             }
             edges.insert(parent_id, sons);
