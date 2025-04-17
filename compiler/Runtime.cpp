@@ -38,6 +38,7 @@ Runtime::Runtime(Module &M) {
   IRBuilder<> IRB(M.getContext());
   auto *intPtrType = M.getDataLayout().getIntPtrType(M.getContext());
   auto *ptrT = IRB.getInt8PtrTy();
+  auto *int32T = IRB.getInt32Ty();
   auto *int8T = IRB.getInt8Ty();
   auto *int1T = IRB.getInt1Ty();
   auto *voidT = IRB.getVoidTy();
@@ -72,8 +73,11 @@ Runtime::Runtime(Module &M) {
   buildConcat =
       import(M, "_sym_concat_helper", ptrT, ptrT,
              ptrT); // doesn't follow naming convention for historic reasons
+  // pushPathConstraint =
+      // import(M, "_sym_push_path_constraint", voidT, ptrT, int1T, intPtrType);
+
   pushPathConstraint =
-      import(M, "_sym_push_path_constraint", voidT, ptrT, int1T, intPtrType);
+      import(M, "_sym_push_path_constraint", voidT, ptrT, int1T, intPtrType, int32T);
 
   // Overflow arithmetic
   buildAddOverflow =
@@ -196,7 +200,8 @@ bool isInterceptedFunction(const Function &f) {
       "lseek",  "lseek64", "fopen",    "fopen64", "fread",   "fseek",
       "fseeko", "rewind",  "fseeko64", "getc",    "ungetc",  "memcpy",
       "memset", "strncpy", "strchr",   "memcmp",  "memmove", "ntohl",
-      "fgets",  "fgetc",   "getchar",  "bcopy",   "bcmp",    "bzero"};
+      "fgets",  "fgetc",   "getchar",  "bcopy",   "bcmp",    "bzero"
+      "strcmp", "strncmp", "strrchr"};
 
   return (kInterceptedFunctions.count(f.getName()) > 0);
 }

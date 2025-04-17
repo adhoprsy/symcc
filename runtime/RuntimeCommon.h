@@ -178,7 +178,7 @@ SymExpr _sym_get_return_expression(void);
  * Constraint handling
  */
 void _sym_push_path_constraint(nullable SymExpr constraint, int taken,
-                               uintptr_t site_id);
+                               uintptr_t site_id, uint32_t unique_id);
 SymExpr _sym_get_input_byte(size_t offset, uint8_t concrete_value);
 void _sym_make_symbolic(const void *data, size_t byte_length,
                         size_t input_offset);

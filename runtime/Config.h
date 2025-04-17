@@ -17,6 +17,7 @@
 #define CONFIG_H
 
 #include <string>
+#include <unordered_set>
 #include <variant>
 
 /// Marker struct for fully concrete execution.
@@ -46,6 +47,8 @@ struct Config {
   std::string symdictDir = "/tmp/symdict";
 
   bool enable_dict = true;
+  bool enable_direct = true;
+  std::unordered_set<uint32_t> direct_targets;
 
   /// The file to log constraint solving information to.
   std::string logFile = "";

@@ -19,6 +19,7 @@
 #include <cstddef>
 #include <limits>
 #include <sstream>
+#include <iostream>
 #include <stdexcept>
 #include <variant>
 
@@ -36,6 +37,24 @@ bool checkFlagString(std::string value) {
   std::stringstream msg;
   msg << "Unknown flag value " << value;
   throw std::runtime_error(msg.str());
+}
+
+std::unordered_set<uint32_t> parseDirectTargets(std::string targets_string) {
+  std::unordered_set<uint32_t> res;
+  std::stringstream ss(targets_string);
+  std::string token;
+
+  while (std::getline(ss, token, ',')) {
+      if (!token.empty()) { // 忽略空 token (处理末尾逗号)
+          try {
+              res.insert(std::stoul(token));
+          } catch (const std::exception& e) {
+              std::cerr << "Error converting '" << token << "' to uint32_t: " << e.what() << std::endl;
+          }
+      }
+  }
+  return res;
+
 }
 
 } // namespace
@@ -56,6 +75,15 @@ void loadConfig() {
   auto *enableDict = getenv("SYMCC_ENABLE_SYMDICT");
   if (enableDict == nullptr || !checkFlagString(enableDict))
     g_config.enable_dict = false;
+
+  auto *enableDirect = getenv("SYMCC_ENABLE_DIRECT");
+  if (enableDirect == nullptr || !checkFlagString(enableDirect))
+    g_config.enable_direct = false;
+
+  auto *directTargets = getenv("SYMCC_DIRECT_TARGETS");
+  if (directTargets != nullptr && g_config.enable_direct != false) {
+    g_config.direct_targets = parseDirectTargets(directTargets);
+  }
 
   auto *inputFile = getenv("SYMCC_INPUT_FILE");
   if (inputFile != nullptr)

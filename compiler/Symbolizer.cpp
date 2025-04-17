@@ -15,15 +15,40 @@
 #include "Symbolizer.h"
 
 #include <cstdint>
+#include <iostream>
+#include <llvm/IR/Instruction.h>
 #include <llvm/ADT/SmallPtrSet.h>
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/GetElementPtrTypeIterator.h>
 #include <llvm/IR/Intrinsics.h>
 #include <llvm/Transforms/Utils/BasicBlockUtils.h>
+#include <optional>
 
 #include "Runtime.h"
 
 using namespace llvm;
+
+std::optional<uint32_t> getUniqueID(Instruction& I) {
+  auto* bb = I.getParent();
+  auto* M = I.getModule();
+  auto* termInst = bb->getTerminator();
+  if (!termInst) return std::nullopt;
+
+  if (!termInst->hasMetadata(M->getMDKindID("basicblock.id"))) return std::nullopt;
+
+  auto* md = termInst->getMetadata(M->getMDKindID("basicblock.id"));
+
+  if (md && md->getNumOperands() >= 1) {
+    if (ConstantInt *CI = mdconst::dyn_extract<ConstantInt>(md->getOperand(0))) {
+      uint32_t id = CI->getZExtValue();
+
+      errs() << "Unique id : " << id << "  |  " << I << "\n";
+
+      return std::optional(id);
+    }
+  }
+  return std::nullopt;
+}
 
 void Symbolizer::symbolizeFunctionArguments(Function &F) {
   // The main function doesn't receive symbolic arguments.
@@ -85,7 +110,7 @@ void Symbolizer::shortCircuitExpressionUses() {
     assert(!symbolicComputation.inputs.empty() &&
            "Symbolic computation has no inputs");
 
-    // errs() << "Input of computation: " << *symbolicComputation.firstInstruction << 
+    // errs() << "Input of computation: " << *symbolicComputation.firstInstruction <<
     //  " - " << *symbolicComputation.lastInstruction << "\n";
     // for (const auto& input : symbolicComputation.inputs) {
     //   errs() << " - concreteValue: "<< *input.concreteValue
@@ -443,11 +468,16 @@ void Symbolizer::visitSelectInst(SelectInst &I) {
   // negated) condition to the path constraints and copy the symbolic
   // expression over from the chosen argument.
 
+  auto tmp = getUniqueID(I);
+  uint32_t unique_id = tmp.value_or(UINT32_MAX);
+
   IRBuilder<> IRB(&I);
   auto runtimeCall = buildRuntimeCall(IRB, runtime.pushPathConstraint,
                                       {{I.getCondition(), true},
                                        {I.getCondition(), false},
-                                       {getTargetPreferredInt(&I), false}});
+                                       {getTargetPreferredInt(&I), false},
+                                       {llvm::ConstantInt::get(IRB.getInt32Ty(), unique_id), false}});
+
   registerSymbolicComputation(runtimeCall);
   if (getSymbolicExpression(I.getTrueValue()) ||
       getSymbolicExpression(I.getFalseValue())) {
@@ -497,11 +527,15 @@ void Symbolizer::visitBranchInst(BranchInst &I) {
   if (I.isUnconditional())
     return;
 
+  auto tmp = getUniqueID(I);
+  uint32_t unique_id = tmp.value_or(UINT32_MAX);
+
   IRBuilder<> IRB(&I);
   auto runtimeCall = buildRuntimeCall(IRB, runtime.pushPathConstraint,
                                       {{I.getCondition(), true},
                                        {I.getCondition(), false},
-                                       {getTargetPreferredInt(&I), false}});
+                                       {getTargetPreferredInt(&I), false},
+                                       {llvm::ConstantInt::get(IRB.getInt32Ty(), unique_id), false}});
   registerSymbolicComputation(runtimeCall);
 }
 
@@ -918,6 +952,9 @@ void Symbolizer::visitSwitchInst(SwitchInst &I) {
   if (conditionExpr == nullptr)
     return;
 
+  auto tmp = getUniqueID(I);
+  uint32_t unique_id = tmp.value_or(UINT32_MAX);
+
   // Build a check whether we have a symbolic condition, to be used later.
   auto *haveSymbolicCondition = IRB.CreateICmpNE(
       conditionExpr, ConstantPointerNull::get(IRB.getInt8PtrTy()));
@@ -932,7 +969,8 @@ void Symbolizer::visitSwitchInst(SwitchInst &I) {
         runtime.comparisonHandlers[CmpInst::ICMP_EQ],
         {conditionExpr, createValueExpression(caseHandle.getCaseValue(), IRB)});
     IRB.CreateCall(runtime.pushPathConstraint,
-                   {caseConstraint, caseTaken, getTargetPreferredInt(&I)});
+                   {caseConstraint, caseTaken, getTargetPreferredInt(&I),
+                     llvm::ConstantInt::get(IRB.getInt32Ty(), unique_id)});
   }
 }
 
@@ -1084,25 +1122,25 @@ Symbolizer::SymbolicComputation Symbolizer::forceBuildRuntimeCall(
     functionArgs.push_back(symbolic ? getSymbolicExpressionOrNull(arg) : arg);
   }
   auto *call = IRB.CreateCall(function, functionArgs);
-  
+
   std::vector<Input> inputs;
   for (unsigned i = 0; i < args.size(); i++) {
     const auto &[arg, symbolic] = args[i];
     if (symbolic) {
       // if (function.getCallee()->getName() == "_sym_push_path_constraint") {
-      // errs() << "forceBuildRuntimeCall\n"; 
-      // errs() << "...Input(arg): "  << *arg << "\n" 
-      //        << "...get SE: " << *getSymbolicExpressionOrNull(arg) <<  "\n" 
-      //        << "...i_th : "  << i << "\n" 
+      // errs() << "forceBuildRuntimeCall\n";
+      // errs() << "...Input(arg): "  << *arg << "\n"
+      //        << "...get SE: " << *getSymbolicExpressionOrNull(arg) <<  "\n"
+      //        << "...i_th : "  << i << "\n"
       //        << "...call : " << *call << "\n";
       // }
       inputs.push_back(Input(arg, i, call));
     }
     else {
       // if (function.getCallee()->getName() == "_sym_push_path_constraint") {
-      // errs() << "forceBuildRuntimeCall\n"; 
-      // errs() << "...Input(no sym arg): "  << *arg << "\n" 
-      //        << "...i_th : "  << i << "\n" 
+      // errs() << "forceBuildRuntimeCall\n";
+      // errs() << "...Input(no sym arg): "  << *arg << "\n"
+      //        << "...i_th : "  << i << "\n"
       //        << "...call : " << *call << "\n";
       // }
 
