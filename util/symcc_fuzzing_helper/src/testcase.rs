@@ -287,8 +287,9 @@ pub fn copy_new_symdict(
     );
 
     if let Some(orig_id) = orig_name.get(3..9) {
-        let new_name = format!("{:06}_{:06}", &orig_id, target_dir.current_id);
+        let new_name = format!("{:06}", &orig_id);
         let target = target_dir.path.join(new_name);
+
         log::debug!("Creating test case {}", target.display());
 
         SymDict::trim_symdict(&symdict_file, &target).with_context(|| {

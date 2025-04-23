@@ -47,7 +47,7 @@ using namespace llvm;
 #define DEBUG(X) ((void)0)
 #endif
 
-#define MAP_SIZE (1<<16)
+#define MAP_SIZE (1<<18)
 
 uint32_t read_id_from_metadata(MDNode* MD) {
   if (MD && MD->getNumOperands() >= 1) {
@@ -115,7 +115,7 @@ uint32_t generate_bb_hash(const BasicBlock* BB) {
   // errs() << os.str() << "\n";
   // errs() << "=======================\n";
   std::hash<std::string> hasher;
-  return static_cast<uint32_t>(hasher(os.str()) % MAP_SIZE);
+  return static_cast<uint32_t>(hasher(os.str()) % MAP_SIZE );
 }
 
 char SymbolizeLegacyPass::ID = 0;

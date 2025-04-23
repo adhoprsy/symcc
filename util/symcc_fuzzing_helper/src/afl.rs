@@ -1,9 +1,9 @@
 use anyhow::{ensure, Context, Result};
-use bytes::{Buf, Bytes};
+use bytes::Buf;
 use std::collections::{HashMap, HashSet};
 use std::ffi::OsString;
 use std::fs::{self, File};
-use std::io::{self, BufRead, BufReader, Read};
+use std::io::{self, Read};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
@@ -201,7 +201,7 @@ impl AflConfig {
             map_size: std::env::var("AFL_MAP_SIZE")
                 .ok()
                 .and_then(|v| v.parse().ok())
-                .unwrap_or(65536),
+                .unwrap_or(1 << 18),
         })
     }
 
@@ -317,8 +317,7 @@ impl EdgeMap {
             return Ok(EdgeMap(edges));
         }
 
-        let line_num = reader.get_u32_le();
-        for _ in 0..line_num {
+        while reader.has_remaining() {
             let mut sons = HashSet::new();
             let parent_id = reader.get_u32_le();
             let num_son = reader.get_u8();
@@ -326,6 +325,12 @@ impl EdgeMap {
                 let son_id = reader.get_u32_le();
                 sons.insert(son_id);
             }
+
+            // 暴力去重
+            if edges.contains_key(&parent_id) {
+                continue;
+            }
+
             edges.insert(parent_id, sons);
         }
 
@@ -417,3 +422,18 @@ impl BitMap {
         self.0[word as usize] &= !(1 << bit);
     }
 }
+
+// #[cfg(test)]
+// mod tests {
+//     use anyhow::Result;
+
+//     use super::*;
+//     #[test]
+//     fn test_read_edge_info() -> Result<()> {
+//         let edges = EdgeMap::read_from_file(
+//             "/home/thematch/Desktop/bishe/test/test_read_edge_info/edge_info.txt",
+//         )?;
+//         println!("{:?}", edges.0);
+//         Ok(())
+//     }
+// }

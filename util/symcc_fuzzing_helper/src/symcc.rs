@@ -26,7 +26,7 @@ use std::process::{Command, Stdio};
 use std::str;
 use std::time::{Duration, Instant};
 
-use crate::testcase::{insert_input_file, TestcaseDir, TestcaseScore};
+use crate::testcase::insert_input_file;
 
 const TIMEOUT: u32 = 300;
 
@@ -240,7 +240,7 @@ impl SymCC {
 #[cfg(test)]
 mod tests {
     use super::*;
-
+    use crate::testcase::TestcaseScore;
     #[test]
     fn test_score_ordering() {
         let min_score = TestcaseScore::minimum();

@@ -14,9 +14,9 @@ pub struct DictWord {
 
 impl Ord for DictWord {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.begin
-            .cmp(&other.begin)
-            .then_with(|| self.end.cmp(&other.end))
+        self.end
+            .cmp(&other.end)
+            .then_with(|| self.begin.cmp(&other.begin))
     }
 }
 
