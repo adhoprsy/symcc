@@ -38,10 +38,10 @@ impl AflMap {
             )
         })?;
 
-        let bb_bitmap = BitMap::from_u8(fs::read(&bb_bitmap_path).with_context(|| {
+        let bb_bitmap = BitMap(fs::read(&bb_bitmap_path).with_context(|| {
             format!(
                 "Failed to read the basic block occurance bitmap that \
-                 afl-showmap should have generated at {}",
+                    afl-showmap should have generated at {}",
                 bb_bitmap_path.as_ref().display()
             )
         })?);
@@ -340,33 +340,12 @@ impl EdgeMap {
     }
 }
 
-pub struct BitMap(pub Vec<u64>);
+pub struct BitMap(pub Vec<u8>);
 
 impl BitMap {
     pub fn new(map_size: usize) -> Self {
-        assert!(
-            map_size % std::mem::size_of::<u64>() == 0,
-            "Map size must be a multiple of 64"
-        );
-        let inner = Vec::with_capacity(map_size / 64);
+        let inner = Vec::with_capacity(map_size / 8);
         Self(inner)
-    }
-
-    // reinterpret a vec<u8> to vec<u64>
-    pub fn from_u8(mut from: Vec<u8>) -> Self {
-        assert!(
-            from.len() % std::mem::size_of::<u64>() == 0,
-            "input length must be a multiple of 64"
-        );
-        let ptr = from.as_mut_ptr();
-        let len = from.len() / std::mem::size_of::<u64>();
-        let cap = from.capacity() / std::mem::size_of::<u64>();
-
-        // 防止 `bytes` 被 Drop（避免 double-free）
-        std::mem::forget(from);
-
-        // 直接重新解释内存布局（无拷贝）
-        Self(unsafe { Vec::from_raw_parts(ptr as *mut u64, len, cap) })
     }
 
     pub fn merge_vec(&mut self, other: Self) -> Result<bool> {
@@ -388,22 +367,22 @@ impl BitMap {
 
     #[inline]
     pub fn contains(&self, index: u32) -> bool {
-        let word = index >> 6;
-        let bit = index & 63;
+        let word = index >> 3;
+        let bit = index & 7;
         if word as usize > self.0.len() {
             log::warn!("bitmap out of range, index : {}", index);
             return false;
         }
         self.0
             .get(word as usize)
-            .map(|&x| (x >> bit) & 1 != 0)
+            .map(|&x| x & (1 << bit) != 0)
             .unwrap()
     }
 
     #[inline]
     pub fn set(&mut self, index: u32) {
-        let word = index >> 6;
-        let bit = index & 63;
+        let word = index >> 3;
+        let bit = index & 7;
         if word as usize > self.0.len() {
             log::warn!("bitmap out of range, index : {}", index);
             return;
@@ -413,8 +392,8 @@ impl BitMap {
 
     #[inline]
     pub fn unset(&mut self, index: u32) {
-        let word = index >> 6;
-        let bit = index & 63;
+        let word = index >> 3;
+        let bit = index & 7;
         if word as usize > self.0.len() {
             log::warn!("bitmap out of range, index : {}", index);
             return;

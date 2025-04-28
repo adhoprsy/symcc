@@ -41,9 +41,9 @@ std::optional<uint32_t> getUniqueID(Instruction& I) {
   if (md && md->getNumOperands() >= 1) {
     if (ConstantInt *CI = mdconst::dyn_extract<ConstantInt>(md->getOperand(0))) {
       uint32_t id = CI->getZExtValue();
-
+#ifdef UID_DEBUG
       errs() << "Unique id : " << id << "  |  " << I << "\n";
-
+#endif
       return std::optional(id);
     }
   }
@@ -491,7 +491,7 @@ void Symbolizer::visitSelectInst(SelectInst &I) {
 void Symbolizer::visitCmpInst(CmpInst &I) {
   // ICmp is integer comparison, FCmp compares floating-point values; we
   // simply include either in the resulting expression.
-  errs() << "visit CmpInst: " << I << " | " << "\n";
+  // errs() << "visit CmpInst: " << I << " | " << "\n";
 
   IRBuilder<> IRB(&I);
   SymFnT handler = runtime.comparisonHandlers.at(I.getPredicate());

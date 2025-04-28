@@ -62,4 +62,5 @@ exec $compiler                                  \
      -L"$runtime_dir"                           \
      -lSymRuntime                               \
      -Wl,-rpath,"$runtime_dir"                  \
-     -Qunused-arguments
+     -Qunused-arguments \
+     -fno-builtin-strcmp -fno-builtin-strncmp -fno-builtin-strcasecmp -fno-builtin-strncasecmp -fno-builtin-memcmp

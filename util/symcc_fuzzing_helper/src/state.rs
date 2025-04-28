@@ -186,12 +186,12 @@ impl State {
             if *x == 0 {
                 continue;
             }
-            for bit in 0..64 {
+            for bit in 0..8 {
                 if x & (1 << bit) == 0 {
                     continue;
                 }
                 // basic block id that is coverd by this testcase
-                let index = (word << 6) + bit;
+                let index = (word * 8) + bit;
                 // check if its in global uncovered edges
                 if self.is_frontier(index as u32, aflmap) {
                     frontier_blocks.insert(index as u32);
@@ -203,7 +203,10 @@ impl State {
             self.uncovered_edges
                 .0
                 .entry(*id)
-                .and_modify(|sons| sons.retain(|son_id| bb_bitmap.contains(*son_id)));
+                // remove all bitmap covered sons
+                .and_modify(|sons| sons.retain(|son_id| !bb_bitmap.contains(*son_id)));
+            // remove all parents with empty uncovered son
+            self.uncovered_edges.0.retain(|_, sons| !sons.is_empty());
         }
 
         self.current_frontier_blocks = frontier_blocks;

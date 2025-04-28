@@ -17,7 +17,7 @@ use itertools::Itertools;
 use regex::Regex;
 use std::cmp;
 use std::collections::HashSet;
-use std::ffi::OsString;
+use std::ffi::{FromBytesUntilNulError, OsString};
 use std::fs::{self, File};
 use std::io;
 use std::os::unix::process::ExitStatusExt;
@@ -124,10 +124,19 @@ impl SymCC {
                 output_dir.as_ref().display()
             )
         })?;
+        fs::create_dir(&symdict_dir).with_context(|| {
+            format!(
+                "Failed to create the output directory {} for SymCC",
+                output_dir.as_ref().display()
+            )
+        })?;
 
         let frontiers_string = frontiers.iter().sorted().map(|x| x.to_string()).join(",");
 
         let mut analysis_command = Command::new("timeout");
+
+        // log::info!("SYMCC_DIRECT_TARGETS : {:?}", frontiers_string);
+
         analysis_command
             .args(&["-k", "5", &TIMEOUT.to_string()])
             .args(&self.command)
@@ -136,8 +145,8 @@ impl SymCC {
             .env("SYMCC_OUTPUT_DIR", output_dir.as_ref())
             .env("SYMCC_ENABLE_SYMDICT", "1")
             .env("SYMCC_SYMDICT_DIR", symdict_dir.as_ref())
-            .env("SYMCC_ENABLE_DIRECT", "1")
-            .env("SYMCC_DIRECT_TARGETS", frontiers_string)
+            // .env("SYMCC_ENABLE_DIRECT", "1")
+            // .env("SYMCC_DIRECT_TARGETS", frontiers_string)
             .stdout(Stdio::null())
             .stderr(Stdio::piped()); // capture SMT logs
 
