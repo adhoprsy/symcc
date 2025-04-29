@@ -476,7 +476,8 @@ void Symbolizer::visitSelectInst(SelectInst &I) {
                                       {{I.getCondition(), true},
                                        {I.getCondition(), false},
                                        {getTargetPreferredInt(&I), false},
-                                       {llvm::ConstantInt::get(IRB.getInt32Ty(), unique_id), false}});
+                                       {llvm::ConstantInt::get(IRB.getInt32Ty(), unique_id), false},
+                                       {llvm::ConstantInt::get(IRB.getInt1Ty(), enable_symdict), false}});
 
   registerSymbolicComputation(runtimeCall);
   if (getSymbolicExpression(I.getTrueValue()) ||
@@ -535,7 +536,8 @@ void Symbolizer::visitBranchInst(BranchInst &I) {
                                       {{I.getCondition(), true},
                                        {I.getCondition(), false},
                                        {getTargetPreferredInt(&I), false},
-                                       {llvm::ConstantInt::get(IRB.getInt32Ty(), unique_id), false}});
+                                       {llvm::ConstantInt::get(IRB.getInt32Ty(), unique_id), false},
+                                      {llvm::ConstantInt::get(IRB.getInt1Ty(), enable_symdict), false}});
   registerSymbolicComputation(runtimeCall);
 }
 
@@ -970,7 +972,7 @@ void Symbolizer::visitSwitchInst(SwitchInst &I) {
         {conditionExpr, createValueExpression(caseHandle.getCaseValue(), IRB)});
     IRB.CreateCall(runtime.pushPathConstraint,
                    {caseConstraint, caseTaken, getTargetPreferredInt(&I),
-                     llvm::ConstantInt::get(IRB.getInt32Ty(), unique_id)});
+                     llvm::ConstantInt::get(IRB.getInt32Ty(), unique_id), llvm::ConstantInt::get(IRB.getInt1Ty(), enable_symdict)});
   }
 }
 
@@ -1161,7 +1163,7 @@ void Symbolizer::tryAlternative(IRBuilder<> &IRB, Value *V) {
                        {destExpr, concreteDestExpr});
     auto *pushAssertion = IRB.CreateCall(
         runtime.pushPathConstraint,
-        {destAssertion, IRB.getInt1(true), getTargetPreferredInt(V)});
+        {destAssertion, IRB.getInt1(true), getTargetPreferredInt(V), llvm::ConstantInt::get(IRB.getInt32Ty(), UINT32_MAX-1), llvm::ConstantInt::get(IRB.getInt1Ty(), enable_symdict)});
     registerSymbolicComputation(SymbolicComputation(
         concreteDestExpr, pushAssertion, {Input(V, 0, destAssertion)}));
   }

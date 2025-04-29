@@ -21,13 +21,29 @@
 #include <llvm/IR/ValueMap.h>
 #include <llvm/Support/raw_ostream.h>
 #include <optional>
+#include <string>
+#include <sstream>
 
 #include "Runtime.h"
 
+static inline bool checkFlagString(std::string value) {
+  std::transform(value.begin(), value.end(), value.begin(),
+                 [](unsigned char c) { return std::tolower(c); });
+  if (value == "1" || value == "on" || value == "yes")
+    return true;
+
+  if (value.empty() || value == "0" || value == "off" || value == "no")
+    return false;
+
+  std::stringstream msg;
+  msg << "Unknown flag value " << value;
+  throw std::runtime_error(msg.str());
+}
 class Symbolizer : public llvm::InstVisitor<Symbolizer> {
 public:
   explicit Symbolizer(llvm::Module &M)
-      : runtime(M), dataLayout(M.getDataLayout()),
+      : enable_symdict(checkFlagString(getenv("SYMCC_ENABLE_SYMDICT"))),
+        runtime(M), dataLayout(M.getDataLayout()),
         ptrBits(M.getDataLayout().getPointerSizeInBits()),
         intPtrType(M.getDataLayout().getIntPtrType(M.getContext())) {}
 
@@ -137,6 +153,7 @@ private:
   static constexpr unsigned kExpectedMaxPHINodesPerFunction = 16;
   static constexpr unsigned kExpectedSymbolicArgumentsPerComputation = 2;
 
+  bool enable_symdict = false;
   /// A symbolic input.
   struct Input {
     llvm::Value *concreteValue;
