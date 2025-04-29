@@ -77,7 +77,7 @@ Runtime::Runtime(Module &M) {
       // import(M, "_sym_push_path_constraint", voidT, ptrT, int1T, intPtrType);
 
   pushPathConstraint =
-      import(M, "_sym_push_path_constraint", voidT, ptrT, int1T, intPtrType, int32T);
+      import(M, "_sym_push_path_constraint", voidT, ptrT, int1T, intPtrType, int32T, int1T);
 
   // Overflow arithmetic
   buildAddOverflow =

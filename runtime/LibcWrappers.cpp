@@ -65,7 +65,7 @@ void tryAlternative(V value, SymExpr valueExpr, F caller) {
     _sym_push_path_constraint(
         _sym_build_equal(valueExpr,
                          _sym_build_integer(value, sizeof(value) * 8)),
-        true, reinterpret_cast<uintptr_t>(caller), UINT32_MAX);
+        true, reinterpret_cast<uintptr_t>(caller), UINT32_MAX , false);
   }
 }
 
@@ -519,7 +519,7 @@ const char *SYM(strchr)(const char *s, int c) {
         _sym_build_not_equal(
             (*shadowIt != nullptr) ? *shadowIt : _sym_build_integer(s[i], 8),
             cExpr),
-        /*taken*/ 1, reinterpret_cast<uintptr_t>(SYM(strchr)), UINT32_MAX - 1);
+        /*taken*/ 1, reinterpret_cast<uintptr_t>(SYM(strchr)), UINT32_MAX - 1, true);
     ++shadowIt;
   }
 
@@ -553,7 +553,7 @@ const char *SYM(strrchr)(const char *s, int c) {
             (*shadowIt != nullptr) ? *shadowIt : _sym_build_integer(s[i], 8),
             cExpr),
         /*taken*/ 1, reinterpret_cast<uintptr_t>(SYM(strrchr))
-        , UINT32_MAX - 1);
+        , UINT32_MAX - 1, true);
     --shadowIt;
   }
   return result;
@@ -581,7 +581,7 @@ int SYM(memcmp)(const void *a, const void *b, size_t n) {
   }
 
   _sym_push_path_constraint(allEqual, result == 0,
-                            reinterpret_cast<uintptr_t>(SYM(memcmp)), UINT32_MAX - 1);
+                            reinterpret_cast<uintptr_t>(SYM(memcmp)), UINT32_MAX - 1, true);
   return result;
 }
 
@@ -618,7 +618,7 @@ int SYM(bcmp)(const void *a, const void *b, size_t n) {
   }
 
   _sym_push_path_constraint(allEqual, result == 0,
-                            reinterpret_cast<uintptr_t>(SYM(bcmp)), UINT32_MAX);
+                            reinterpret_cast<uintptr_t>(SYM(bcmp)), UINT32_MAX-1, true);
   return result;
 }
 
@@ -648,7 +648,7 @@ int SYM(strncmp)(const char *a, const char *b, size_t n) {
 
   _sym_push_path_constraint(allEqual, result == 0,
                             reinterpret_cast<uintptr_t>(SYM(strncmp))
-                            , /*@SJJ*/UINT32_MAX - 1);
+                            , /*@SJJ*/UINT32_MAX - 1, true);
   return result;
 }
 
@@ -675,7 +675,7 @@ int SYM(strcmp)(const char *a, const char *b) {
 
   _sym_push_path_constraint(allEqual, result == 0,
                             reinterpret_cast<uintptr_t>(SYM(strcmp))
-                            , /*@SJJ*/UINT32_MAX - 1);
+                            , /*@SJJ*/UINT32_MAX - 1, true);
   return result;
 }
 

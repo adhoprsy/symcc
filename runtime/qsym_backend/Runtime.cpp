@@ -322,7 +322,7 @@ SymExpr _sym_build_trunc(SymExpr expr, uint8_t bits) {
 }
 
 void _sym_push_path_constraint(SymExpr constraint, int taken,
-                               uintptr_t site_id, uint32_t unique_id) {
+                               uintptr_t site_id, uint32_t unique_id, bool do_symdict) {
   if (constraint == nullptr)
     return;
 
@@ -332,7 +332,7 @@ void _sym_push_path_constraint(SymExpr constraint, int taken,
   // std::cerr << "\n";
   bool is_target = g_config.direct_targets.count(unique_id) > 0 || unique_id == UINT32_MAX - 1;
   std::cerr << "unique id : " << unique_id << "  --  is target : " << is_target << "\n";
-  g_solver->addJcc(expression, taken != 0, site_id, g_config.enable_dict, is_target);
+  g_solver->addJcc(expression, taken != 0, site_id, g_config.enable_dict, is_target, do_symdict);
 }
 
 SymExpr _sym_get_input_byte(size_t offset, uint8_t value) {
