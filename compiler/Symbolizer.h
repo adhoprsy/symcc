@@ -26,7 +26,9 @@
 
 #include "Runtime.h"
 
-static inline bool checkFlagString(std::string value) {
+static inline bool checkFlagString(char* raw_value) {
+  if (raw_value == nullptr) return false;
+  std::string value{raw_value};
   std::transform(value.begin(), value.end(), value.begin(),
                  [](unsigned char c) { return std::tolower(c); });
   if (value == "1" || value == "on" || value == "yes")
