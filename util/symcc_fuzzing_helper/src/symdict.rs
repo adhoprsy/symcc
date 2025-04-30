@@ -67,10 +67,10 @@ impl SymDict {
         let mut vec = vec![];
 
         while let Some(dictword) = DictWord::decode(&mut reader)? {
-            println!(
-                "begin: {}, end: {}, data: {:?}",
-                dictword.begin, dictword.end, dictword.data
-            );
+            // println!(
+            //     "begin: {}, end: {}, data: {:?}",
+            //     dictword.begin, dictword.end, dictword.data
+            // );
             vec.push(dictword);
         }
 

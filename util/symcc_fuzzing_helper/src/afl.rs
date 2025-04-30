@@ -250,7 +250,7 @@ impl AflConfig {
         }
 
         afl_show_map
-            .args(&["-t", "10000", "-m", "none", "-b", "-o"])
+            .args(&["-t", "20000", "-m", "none", "-b", "-o"])
             .arg(testcase_bitmap.as_ref())
             .arg("-B")
             .arg(testcase_bb_bitmap.as_ref())

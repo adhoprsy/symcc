@@ -28,7 +28,7 @@ use std::time::{Duration, Instant};
 
 use crate::testcase::insert_input_file;
 
-const TIMEOUT: u32 = 300;
+const TIMEOUT: u32 = 500;
 
 /// The run-time configuration of SymCC.
 #[derive(Debug)]
@@ -145,8 +145,8 @@ impl SymCC {
             .env("SYMCC_OUTPUT_DIR", output_dir.as_ref())
             .env("SYMCC_ENABLE_SYMDICT", "1")
             .env("SYMCC_SYMDICT_DIR", symdict_dir.as_ref())
-            // .env("SYMCC_ENABLE_DIRECT", "1")
-            // .env("SYMCC_DIRECT_TARGETS", frontiers_string)
+            .env("SYMCC_ENABLE_DIRECT", "1")
+            .env("SYMCC_DIRECT_TARGETS", frontiers_string)
             .stdout(Stdio::null())
             .stderr(Stdio::piped()); // capture SMT logs
 
