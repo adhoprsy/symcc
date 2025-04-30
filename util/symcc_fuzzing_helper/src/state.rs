@@ -1,12 +1,12 @@
 use anyhow::{Context, Result};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::fs::File;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 use tempfile::tempdir;
 
-use crate::afl::{AflConfig, AflMap, EdgeMap};
+use crate::afl::{AflConfig, AflMap, BitMap, EdgeMap};
 use crate::stats::Stats;
 use crate::symcc::SymCC;
 use crate::testcase::{
@@ -21,7 +21,11 @@ pub struct State {
     pub current_aflmap: AflMap,
 
     // all edges of conditional branches
-    pub uncovered_edges: EdgeMap,
+    pub uncovered_edges: Vec<EdgeMap>,
+
+    pub parent_score: HashMap<u32, u32>,
+    pub score_level_thresh: f64,
+    pub level: usize,
 
     // frontier blocks of current seed
     pub current_frontier_blocks: HashSet<u32>,
@@ -69,9 +73,15 @@ impl State {
         let symdicts = TestcaseDir::new(symcc_dir.join("symdicts"))?;
         let stats_file = File::create(symcc_dir.join("stats"))?;
 
+        let (uncovered_edges, parent_score) =
+            EdgeMap::read_from_file(edge_path.as_ref().to_str().unwrap())?;
+
         Ok(State {
             current_aflmap: AflMap::new(),
-            uncovered_edges: EdgeMap::read_from_file(edge_path.as_ref().to_str().unwrap())?,
+            uncovered_edges: vec![uncovered_edges.clone(); 8],
+            parent_score,
+            score_level_thresh: 0.0,
+            level: 0,
             current_frontier_blocks: HashSet::new(),
             processed_files: HashSet::new(),
             queue: symcc_queue,
@@ -154,11 +164,36 @@ impl State {
         self.current_aflmap.merge(testcase_map)
     }
 
+    pub fn update_level(&mut self, bb_bitmap: &BitMap) {
+        let mut prox: f64 = 0.0;
+        let mut cnt: usize = 0;
+        for (word, x) in bb_bitmap.0.iter().enumerate() {
+            if *x == 0 {
+                continue;
+            }
+            for bit in 0..8 {
+                if x & (1 << bit) == 0 {
+                    continue;
+                }
+                let index = ((word * 8) + bit) as u32;
+                if self.parent_score.contains_key(&index) {
+                    prox += (self.parent_score[&index] as f64).ln();
+                    cnt += 1;
+                }
+            }
+        }
+        prox /= (cnt as f64);
+        if prox > self.score_level_thresh * 1.5 && self.level < self.uncovered_edges.len() - 1 {
+            self.level += 1;
+            self.score_level_thresh = prox;
+        }
+    }
+
     /*
         id需要满足，在新文件的coverage中，并且是之前的frontier，并且仍旧有son未被覆盖
     */
-    pub fn is_frontier(&self, id: u32, aflmap: &[u8]) -> bool {
-        if let Some(sons) = self.uncovered_edges.0.get(&id) {
+    pub fn is_frontier(&self, id: u32, level: usize, aflmap: &[u8]) -> bool {
+        if let Some(sons) = self.uncovered_edges[level].0.get(&id) {
             let mut new_covered = 0;
             for son in sons {
                 let edge = AflMap::edge_hash(&id, son);
@@ -182,6 +217,9 @@ impl State {
 
         let aflmap = new_map.data.as_ref().unwrap();
         let bb_bitmap = new_map.bb_bitmap.as_ref().unwrap();
+
+        self.update_level(&bb_bitmap);
+
         for (word, x) in bb_bitmap.0.iter().enumerate() {
             if *x == 0 {
                 continue;
@@ -193,20 +231,22 @@ impl State {
                 // basic block id that is coverd by this testcase
                 let index = (word * 8) + bit;
                 // check if its in global uncovered edges
-                if self.is_frontier(index as u32, aflmap) {
+                if self.is_frontier(index as u32, self.level, aflmap) {
                     frontier_blocks.insert(index as u32);
                 }
             }
         }
         // updata uncovered_edge
         for id in &frontier_blocks {
-            self.uncovered_edges
+            self.uncovered_edges[self.level]
                 .0
                 .entry(*id)
                 // remove all bitmap covered sons
                 .and_modify(|sons| sons.retain(|son_id| !bb_bitmap.contains(*son_id)));
             // remove all parents with empty uncovered son
-            self.uncovered_edges.0.retain(|_, sons| !sons.is_empty());
+            self.uncovered_edges[self.level]
+                .0
+                .retain(|_, sons| !sons.is_empty());
         }
 
         self.current_frontier_blocks = frontier_blocks;

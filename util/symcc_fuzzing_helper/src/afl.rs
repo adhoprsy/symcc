@@ -7,6 +7,7 @@ use std::io::{self, Read};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
+use crate::state::State;
 use crate::testcase::{insert_input_file, TestcaseScore};
 
 /// A coverage map as used by AFL.
@@ -302,24 +303,27 @@ impl AflConfig {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct EdgeMap(pub HashMap<u32, HashSet<u32>>);
 
 impl EdgeMap {
-    pub fn read_from_file(filename: &str) -> Result<EdgeMap> {
+    pub fn read_from_file(filename: &str) -> Result<(EdgeMap, HashMap<u32, u32>)> {
         let mut file = File::open(filename).expect("failed to open edge file");
         let mut buf = Vec::new();
         file.read_to_end(&mut buf)?;
         let mut reader = bytes::Bytes::from(buf);
 
         let mut edges = HashMap::new();
+        let mut parent_score = HashMap::new();
 
         if !reader.has_remaining() {
-            return Ok(EdgeMap(edges));
+            return Ok((EdgeMap(edges), parent_score));
         }
 
         while reader.has_remaining() {
             let mut sons = HashSet::new();
             let parent_id = reader.get_u32_le();
+            let score = reader.get_u32_le();
             let num_son = reader.get_u8();
             for _ in 0..num_son {
                 let son_id = reader.get_u32_le();
@@ -330,13 +334,13 @@ impl EdgeMap {
             if edges.contains_key(&parent_id) {
                 continue;
             }
-
+            parent_score.insert(parent_id, score);
             edges.insert(parent_id, sons);
         }
 
         log::info!("Loaded {} edges from {}", edges.len(), filename);
 
-        Ok(EdgeMap(edges))
+        Ok((EdgeMap(edges), parent_score))
     }
 }
 
