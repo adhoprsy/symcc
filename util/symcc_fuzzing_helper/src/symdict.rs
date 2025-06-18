@@ -101,6 +101,7 @@ impl SymDict {
         self.0.dedup_by(|a, b| a.begin == b.begin && a.end == b.end);
     }
 
+    // remove duplicate symdicts
     pub fn trim_symdict(
         symdict_file: impl AsRef<Path>,
         target_file: impl AsRef<Path>,

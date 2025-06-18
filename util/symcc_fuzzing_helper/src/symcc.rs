@@ -131,10 +131,10 @@ impl SymCC {
             )
         })?;
 
-        let frontiers_string = frontiers.iter().sorted().map(|x| x.to_string()).join(",");
-
         let mut analysis_command = Command::new("timeout");
 
+        // combine targets into "xxx,xxx,xxx,xxx"
+        let frontiers_string = frontiers.iter().sorted().map(|x| x.to_string()).join(",");
         // log::info!("SYMCC_DIRECT_TARGETS : {:?}", frontiers_string);
 
         analysis_command
@@ -145,6 +145,7 @@ impl SymCC {
             .env("SYMCC_OUTPUT_DIR", output_dir.as_ref())
             .env("SYMCC_ENABLE_SYMDICT", "1")
             .env("SYMCC_SYMDICT_DIR", symdict_dir.as_ref())
+            // directed symbolic execution
             // .env("SYMCC_ENABLE_DIRECT", "1")
             // .env("SYMCC_DIRECT_TARGETS", frontiers_string)
             .stdout(Stdio::null())
