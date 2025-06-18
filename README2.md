@@ -1,3 +1,7 @@
+dockerfile等文件在symdict_test文件夹下。
+其他镜像等在我的机器的bishe下symdict_bench_build中，
+登陆thematch ssg420
+
 # 1. 安装
 
 ## 环境
@@ -69,7 +73,7 @@ ninja -j $(nproc)
 
 在测试cpp程序时，如果希望cpp的运行时库中的代码也能参与到求解，就需要使用symcc编译cpp的运行时库libcxx，最好使用symdict中的symcc编译，（当然如果使用原版应该也行）（当然不用SymCC编译，直接用系统自带的库也能跑）
 
-具体参见dockerfile
+具体参见dockerfile，建议先把llvm源码下载下来，构建镜像时直接复制到镜像里再编译
 
 ```docker
 # Build libcxx with the SymCC compiler so we can instrument C++ code.

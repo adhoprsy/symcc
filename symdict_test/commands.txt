@@ -1,0 +1,12 @@
+export EDGE_INFO_OUTPUT_PATH=$OUT/edge_info.txt
+
+CC=/afl/afl-clang-fast CXX=/afl/afl-clang-fast++ SRC=$(pwd) OUT=$(pwd) FUZZER_LIB=/afl_driver.o ./build.sh
+
+CC=/afl/afl-clang-fast CXX=/afl/afl-clang-fast++ SRC=$(pwd)/.. OUT=$(pwd)/.. FUZZER_LIB=/afl_driver.o ../build.sh
+
+
+CC=/symcc/build/symcc CXX=/symcc/build/sym++ SRC=$(pwd) OUT=$(pwd) FUZZER_LIB=/libAFL_symcc.a ./build.sh
+
+CC=/symcc/build/symcc CXX=/symcc/build/sym++ SRC=$(pwd)/.. OUT=$(pwd)/.. FUZZER_LIB=/libAFL_symcc.a ../build.sh
+
+SYMCC_ENABLE_SYMDICT=1 SYMCC_OUTPUT_DIR=./out SYMCC_SYMDICT_DIR=./out SYMCC_INPUT_FILE=./seeds/TestGLYFOne.ttf ../../benchmarks_symcc/freetype2_ftfuzzer/ftfuzzer $SYMCC_INPUT_FILE
